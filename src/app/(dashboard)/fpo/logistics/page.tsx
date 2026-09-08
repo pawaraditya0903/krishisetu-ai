@@ -1,16 +1,27 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Truck, CheckCircle, Navigation, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
+import { LogisticsRoutePlan } from "@/lib/types";
 
 export default function FPOLogisticsPage() {
   const { pools, dispatchPool, routePlans } = useAppStore();
   const reservedPools = pools.filter((p) => p.status === "Reserved" || p.status === "Dispatched" || p.status === "Open");
-  const activeRoute = routePlans[0];
+  const [activeRoute, setActiveRoute] = useState<LogisticsRoutePlan>(routePlans[0]);
+
+  useEffect(() => {
+    apiClient.logistics.getRoutePlan().then((res) => {
+      if (res.data && !res.error) {
+        setActiveRoute(res.data);
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleDispatch = (poolId: string) => {
     dispatchPool(poolId, {
