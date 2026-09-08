@@ -14,13 +14,13 @@ All updates made in the Admin Control Panel are stored in persistent state (`kri
 
 ### Admin Portal Sections:
 1. **`/admin`** — Operational Overview & KPI Health Matrix
-2. **`/admin/users`** — User Lifecycle Management (Farmers, FPOs, Buyers, Verifiers, Admins)
+2. **`/admin/users`** — User Lifecycle Management (Farmers, FPOs, Buyers, Admins)
 3. **`/admin/mandis`** — National Mandi Master Registry & CSV Bulk Importer
 4. **`/admin/fpos`** — FPO Organizations, Collection Centers & Farmer Rosters
 5. **`/admin/crops`** — Commodity Catalog & Grade A/B/C Pricing Matrix
 6. **`/admin/logistics`** — Transporters & Fleet Vehicle Directory
 7. **`/admin/settings`** — Market Discovery Radius (25-1000 km) & Cost Deductions
-8. **`/admin/roles`** — 5-Role RBAC Capability Matrix
+8. **`/admin/roles`** — 4-Role RBAC Capability Matrix
 9. **`/admin/audit`** — Cryptographic SHA-256 Chained Audit Ledger
 
 ---
@@ -38,7 +38,7 @@ All updates made in the Admin Control Panel are stored in persistent state (`kri
 3. Click **"Register Farmer"**. The farmer is immediately active, assigned to the FPO, and can participate in collective pooling and market discovery.
 
 ### Adding Other Roles:
-- Click **"Add Other User"** to create **FPO Managers**, **Institutional Buyers**, **Field Verifiers**, or additional **System Admins**.
+- Click **"Add Other User"** to create **FPO Managers**, **Institutional Buyers**, or additional **System Admins**.
 
 ### Actions on Users:
 - **Edit**: Update contact info, coordinates, crops, or land size.
@@ -114,13 +114,12 @@ All updates made in the Admin Control Panel are stored in persistent state (`kri
 
 ---
 
-## 9. 5-Role RBAC Capability Matrix (`/admin/roles`)
-Configure granular permissions across 5 system roles:
+## 9. 4-Role RBAC Capability Matrix (`/admin/roles`)
+Configure granular permissions across 4 system roles:
 1. **Farmer (`farmer`)**: View prices, join pools, scan crop quality, view settlements.
 2. **FPO Manager (`fpo`)**: Create collective pools, approve lots, dispatch freight, manage roster.
 3. **Buyer (`buyer`)**: Browse verified bulk lots, place escrow bids, confirm delivery.
-4. **Field Verifier (`verifier`)**: On-ground lot inspection, quality grade certification.
-5. **System Admin (`admin`)**: Master registry control, configuration, audit logs.
+4. **System Admin (`admin`)**: Master registry control, configuration, audit logs.
 
 ---
 

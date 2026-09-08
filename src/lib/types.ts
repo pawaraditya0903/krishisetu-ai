@@ -1,4 +1,4 @@
-export type Role = "farmer" | "fpo" | "buyer" | "verifier" | "admin";
+export type Role = "farmer" | "fpo" | "buyer" | "admin";
 
 export type UserStatus = "Active" | "Pending" | "Inactive";
 
@@ -31,7 +31,7 @@ export interface User {
   fpoName?: string;
   assignedFpoId?: string;
   assignedFpoName?: string;
-  assignedDistricts?: string[]; // for verifiers
+  assignedDistricts?: string[];
   organization?: string;
   rating?: number;
   paymentReliabilityScore?: number;

@@ -116,10 +116,6 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       { name: t.nav.myOffers, href: "/buyer/offers", icon: ShoppingCart },
       { name: t.nav.deliveryAcceptance, href: "/buyer/delivery", icon: CheckSquare },
     ],
-    verifier: [
-      { name: language === "mr" ? "लॉट पडताळणी" : language === "hi" ? "लॉट सत्यापन" : "Verify Lots", href: "/fpo/verify", icon: CheckSquare },
-      { name: language === "mr" ? "गुणवत्ता ग्रेडिंग" : language === "hi" ? "गुणवत्ता ग्रेडिंग" : "Quality Grading", href: "/farmer/grade", icon: Camera },
-    ],
     admin: [
       { name: t.nav.dashboard || "Overview", href: "/admin", icon: LayoutDashboard },
       { name: t.nav.users || "Users", href: "/admin/users", icon: Users },

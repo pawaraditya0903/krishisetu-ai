@@ -17,7 +17,7 @@ This major release transforms **KrishiSetu AI** from a prototype into a producti
 
 | Requirement | Implementation Details | Verification Status |
 | :--- | :--- | :---: |
-| **Admin Control Panel** | Full CRUD for Farmers, FPOs, Buyers, Verifiers, Admins at `/admin/users` | ✅ VERIFIED |
+| **Admin Control Panel** | Full CRUD for Farmers, FPOs, Buyers, Admins at `/admin/users` | ✅ VERIFIED |
 | **Zero Static Tables** | All tables support live Add, Edit, Delete, Toggle Active/Inactive, CSV Export | ✅ VERIFIED |
 | **FPO Member Roster** | Assign registered farmers to FPOs, manage collection centers with capacities at `/admin/fpos` | ✅ VERIFIED |
 | **Mandi Master Registry** | Live Mandi CRUD with map coordinate picker, active status toggle at `/admin/mandis` | ✅ VERIFIED |
@@ -30,7 +30,7 @@ This major release transforms **KrishiSetu AI** from a prototype into a producti
 | **Interactive Map Engine** | Zoom (+/-), mouse wheel zoom, pinch-to-zoom, pan drag, Locate Me, Fit All, Fullscreen | ✅ VERIFIED |
 | **Dynamic Radius Circle** | Emerald radial gradient overlay matching active discovery radius with distance tag | ✅ VERIFIED |
 | **Nationwide Coverage** | Discovery works for farmers in Parbhani, Nashik, Pune, Baramati, Mumbai, Delhi, etc. | ✅ VERIFIED |
-| **5-Role RBAC Capability** | Farmer, FPO, Buyer, Verifier, Admin permission matrix with live toggles at `/admin/roles` | ✅ VERIFIED |
+| **4-Role RBAC Capability** | Farmer, FPO, Buyer, Admin permission matrix with live toggles at `/admin/roles` | ✅ VERIFIED |
 | **Cryptographic Audit Ledger** | Immutable SHA-256 chained hashing ($H_n = \text{SHA256}(H_{n-1} \parallel \dots)$) with verification at `/admin/audit` | ✅ VERIFIED |
 
 ---
