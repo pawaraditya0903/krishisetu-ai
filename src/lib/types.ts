@@ -9,6 +9,7 @@ export interface User {
   avatar?: string;
   fpoId?: string;
   fpoName?: string;
+  accessToken?: string;
 }
 
 export type CropGrade = "Grade A" | "Grade B" | "Grade C" | "Pending";

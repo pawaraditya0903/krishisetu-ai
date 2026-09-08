@@ -92,3 +92,56 @@ export async function clearSyncedAction(id: string): Promise<void> {
     console.warn("Failed to remove action:", err);
   }
 }
+
+export async function syncPendingActions(
+  apiBaseUrl: string = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1"
+): Promise<{ synced: number; failed: number }> {
+  const pending = await getPendingActions();
+  let synced = 0;
+  let failed = 0;
+
+  for (const action of pending) {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("krishisetu_jwt") : null;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      if (action.actionType === "CREATE_LOT") {
+        const res = await fetch(`${apiBaseUrl}/crops/lots`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(action.payload),
+        });
+        if (res.ok) {
+          await clearSyncedAction(action.id);
+          synced++;
+        } else {
+          failed++;
+        }
+      } else if (action.actionType === "JOIN_POOL") {
+        const payload = action.payload as { poolId: string; lotId: string };
+        const res = await fetch(`${apiBaseUrl}/pools/${payload.poolId}/join`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ lot_id: payload.lotId }),
+        });
+        if (res.ok) {
+          await clearSyncedAction(action.id);
+          synced++;
+        } else {
+          failed++;
+        }
+      } else {
+        await clearSyncedAction(action.id);
+        synced++;
+      }
+    } catch (err) {
+      console.warn(`Sync failed for action ${action.id}:`, err);
+      failed++;
+    }
+  }
+
+  return { synced, failed };
+}
