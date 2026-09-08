@@ -73,7 +73,9 @@ export default function SettlementPage() {
 
                 <div className="text-slate-500">UPI / Bank Handle</div>
                 <div className="font-mono font-medium text-right text-slate-800 flex items-center justify-end gap-1.5">
-                  rameshpatil****@okhdfcbank
+                  {currentUser?.phone
+                    ? `${currentUser.name.split(" ")[0].toLowerCase()}****@okhdfc`
+                    : "farmer****@okhdfcbank"}
                   <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-300 px-1 py-0">
                     {language === "mr" ? "पडताळलेले" : language === "hi" ? "सत्यापित" : "Verified"}
                   </Badge>
@@ -103,7 +105,7 @@ export default function SettlementPage() {
                     <span className="text-red-600 font-medium">-₹{settlement.breakdown.handling.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Saksham FPO (1.5%):</span>
+                    <span>FPO Service Fee (1.5%):</span>
                     <span className="text-red-600 font-medium">-₹{settlement.breakdown.fpoFee.toLocaleString()}</span>
                   </div>
                   {settlement.breakdown.qualityAdj > 0 && (
