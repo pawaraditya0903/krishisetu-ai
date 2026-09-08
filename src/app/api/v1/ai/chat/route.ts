@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // 1. If Gemini API key is available, call Google Gemini (3.6 Flash / latest)
     if (apiKey && apiKey.trim() !== "") {
       try {
-        const candidateModels = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];
+        const candidateModels = ["gemini-3.6-flash"];
         const langName = language.startsWith("mr")
           ? "Marathi (मराठी)"
           : language.startsWith("hi")
@@ -57,6 +57,7 @@ Provide a clear, helpful, 2 to 4 sentence response tailored for Indian farmers. 
             const response = await fetch(geminiEndpoint, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              signal: AbortSignal.timeout(5000),
               body: JSON.stringify({
                 contents,
                 systemInstruction: {
