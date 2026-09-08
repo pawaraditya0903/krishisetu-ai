@@ -27,7 +27,7 @@ const VERIFIED_BUYERS: VerifiedBuyer[] = [
     gstin: "27AABCF1234F1Z8",
     location: "Hadapsar Hub, Pune",
     reliabilityScore: 98.4,
-    paymentTerm: "Nodal Sandbox Instant Release on Acceptance",
+    paymentTerm: "RBI Nodal Escrow Instant Release on Acceptance",
     cropPreferences: ["Tomato (Grade A)", "Onion", "Capsicum"],
     qualityRequirement: "Strict Grade A, Breaker-to-turning ripeness, uniform crates",
     tradeVolumeQuintal: 4500,

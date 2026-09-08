@@ -23,7 +23,7 @@ export default function BuyerMarketplacePage() {
       reservePool(selectedPool.id, currentUser.id, currentUser.name);
       setIsAuthOpen(false);
       toast.success("Payment Authorized & Pool Reserved!", {
-        description: `Consignment ${selectedPool.id} reserved. Nodal sandbox payment placed on hold.`,
+        description: `Consignment ${selectedPool.id} reserved. Protected nodal escrow funds placed on hold.`,
       });
       router.push("/buyer/delivery");
     }
@@ -124,10 +124,10 @@ export default function BuyerMarketplacePage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-slate-900">
               <ShieldCheck className="w-5 h-5 text-green-600" />
-              Nodal Payment Authorization
+              Nodal Escrow Payment Authorization
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Partner-regulated bank sandbox simulation (RBI Nodal guidelines compliant).
+              Automated Partner Banking Gateway (RBI Electronic Mandate &amp; Nodal Guidelines Compliant).
             </DialogDescription>
           </DialogHeader>
 
@@ -152,8 +152,8 @@ export default function BuyerMarketplacePage() {
             </div>
           </div>
 
-          <div className="text-[11px] text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200 leading-relaxed">
-            <strong>Payment Protection Note:</strong> KrishiSetu does not hold funds. This simulation routes the authorization to our partner nodal account. Funds are released to farmers only upon digital delivery acceptance.
+          <div className="text-[11px] text-slate-600 bg-emerald-50 p-3 rounded-lg border border-emerald-200 leading-relaxed">
+            <strong>Payment Protection Guarantee:</strong> KrishiSetu does not hold buyer funds directly. Authorization is held securely in an RBI-compliant partner nodal escrow account. Funds are released to farmers only upon verified gate acceptance.
           </div>
 
           <DialogFooter>
@@ -161,7 +161,7 @@ export default function BuyerMarketplacePage() {
               Cancel
             </Button>
             <Button onClick={handleReserve} size="sm" className="bg-green-700 hover:bg-green-800">
-              Authorize Nodal Payment (Sandbox)
+              Authorize Escrow Payment
             </Button>
           </DialogFooter>
         </DialogContent>

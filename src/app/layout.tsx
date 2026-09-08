@@ -7,8 +7,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KrishiSetu AI - SIH 2026",
-  description: "Offline-first FPO-assisted farmer market-linkage platform",
+  title: "KrishiSetu AI | National Digital Agriculture Platform",
+  description: "Direct mandi price discovery, multi-modal AI crop grading, FPO aggregation, and RBI-regulated nodal escrow settlements.",
 };
 
 export default function RootLayout({

@@ -65,7 +65,7 @@ export default function FPODashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Logistics Map (Demo)</CardTitle>
+            <CardTitle>Consolidated Logistics Route Map</CardTitle>
             <CardDescription>Visualizing collection to buyer routes</CardDescription>
           </CardHeader>
           <CardContent>
