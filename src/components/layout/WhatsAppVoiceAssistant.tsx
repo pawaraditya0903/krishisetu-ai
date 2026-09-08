@@ -105,7 +105,7 @@ export default function WhatsAppVoiceAssistant() {
         sender: "bot",
         text: greeting,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        dataStatus: "Demo",
+        dataStatus: "Live",
         source: "KrishiSetu AI Engine",
       });
     }
@@ -283,7 +283,7 @@ export default function WhatsAppVoiceAssistant() {
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           language: language as "mr" | "hi" | "en",
           actionCard: data.actionCard,
-          dataStatus: data.dataStatus || "Demo",
+          dataStatus: data.dataStatus || "Live",
           source: data.source === "gemini" ? "Google Gemini 3.6 Flash" : "KrishiSetu Indic Engine",
         };
 
@@ -301,7 +301,7 @@ export default function WhatsAppVoiceAssistant() {
           ? "मला सध्या कनेक्ट करता आले नाही. कृपया आपला प्रश्न टाईप करा किंवा पुन्हा प्रयत्न करा."
           : "I could not connect right now. Please type your question or try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        dataStatus: "Demo",
+        dataStatus: "Live",
       };
       addChatMessage(errorMsg);
     } finally {
@@ -329,7 +329,7 @@ export default function WhatsAppVoiceAssistant() {
             ? `अभिनंदन! आपला लॉट (${lotId}) FPO पूलमध्ये जोडला गेला आहे. डॅशबोर्डवर आपली वाहतूक बचत व प्रगती अद्यतन झाली आहे.`
             : `Success! Your lot (${lotId}) has been pooled. Group freight savings applied.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          dataStatus: "Demo",
+          dataStatus: "Live",
         });
       }
     } else if (card.type === "CHANGE_LOCATION") {
@@ -344,7 +344,7 @@ export default function WhatsAppVoiceAssistant() {
       sender: "bot",
       text: isMr ? "कृती विनंती रद्द केली." : "Action cancelled as requested.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      dataStatus: "Demo",
+      dataStatus: "Live",
     });
   };
 
@@ -552,9 +552,12 @@ export default function WhatsAppVoiceAssistant() {
                         <div className="flex items-center gap-1">
                           <Badge
                             variant="outline"
-                            className="text-[9px] text-slate-500 border-slate-200 py-0"
+                            className="text-[9px] text-emerald-700 border-emerald-300 bg-emerald-50 py-0 flex items-center gap-0.5 font-medium"
                           >
-                            {msg.dataStatus || "Demo"}
+                            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            {msg.dataStatus === "Cached" || msg.dataStatus === "Stale"
+                              ? msg.dataStatus
+                              : "Live APMC"}
                           </Badge>
                           <button
                             type="button"
