@@ -4,9 +4,10 @@ import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, MicOff, Volume2, Sparkles, MessageSquare, Globe, AlertCircle, Send } from "lucide-react";
+import { Mic, MicOff, Volume2, Sparkles, MessageSquare, Globe, AlertCircle, Send, Key, Bot, Loader2, Check } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { translations } from "@/lib/i18n";
+import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 
 interface VoiceAssistantModalProps {
@@ -140,6 +141,11 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
   const [interimTranscript, setInterimTranscript] = useState("");
   const [activeQA, setActiveQA] = useState<QAItem | null>(LOCALIZED_SAMPLE_QUERIES[language]?.[0] || LOCALIZED_SAMPLE_QUERIES.en[0]);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [customApiKey, setCustomApiKey] = useState("");
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyInputVal, setKeyInputVal] = useState("");
+  const [aiSource, setAiSource] = useState<"gemini" | "fallback">("gemini");
 
   const transcriptAccumulatorRef = useRef("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,6 +157,15 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
     () => typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition),
     () => true
   );
+
+  // Load persisted Gemini API key
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedKey = localStorage.getItem("krishisetu_gemini_key") || "";
+      setCustomApiKey(savedKey);
+      setKeyInputVal(savedKey);
+    }
+  }, []);
 
   // Update default QA when language changes
   useEffect(() => {
@@ -691,12 +706,55 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
     }
   }, [mandiPrices, pools, lots, settlements]);
 
-  const handleProcessQuery = useCallback((queryText: string) => {
-    if (!queryText.trim()) return;
-    const qaResult = parseAgriculturalIntent(queryText, selectedLang);
-    setActiveQA(qaResult);
-    speakText(qaResult.response, selectedLang);
-  }, [parseAgriculturalIntent, selectedLang, speakText]);
+  const handleSaveKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = keyInputVal.trim();
+    setCustomApiKey(trimmed);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("krishisetu_gemini_key", trimmed);
+    }
+    setShowKeyInput(false);
+    toast.success(trimmed ? "Gemini API Key Saved" : "Default Cloud AI Restored");
+  };
+
+  const handleProcessQuery = useCallback(
+    async (queryText: string) => {
+      if (!queryText.trim()) return;
+      setIsAiLoading(true);
+
+      try {
+        const res = await apiClient.ai.chat(
+          queryText,
+          selectedLang,
+          [],
+          customApiKey || undefined
+        );
+
+        if (res.data && res.data.reply) {
+          const qaResult: QAItem = {
+            lang: selectedLang.split("-")[0] as "mr" | "hi" | "en",
+            question: queryText,
+            response: res.data.reply,
+            actionHint: res.data.actionHint,
+          };
+          setAiSource(res.data.source);
+          setActiveQA(qaResult);
+          speakText(qaResult.response, selectedLang);
+          setIsAiLoading(false);
+          return;
+        }
+      } catch {
+        // Fall back to built-in agricultural NLU
+      }
+
+      setAiSource("fallback");
+      const qaResult = parseAgriculturalIntent(queryText, selectedLang);
+      setActiveQA(qaResult);
+      speakText(qaResult.response, selectedLang);
+      setIsAiLoading(false);
+    },
+    [customApiKey, parseAgriculturalIntent, selectedLang, speakText]
+  );
 
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -859,20 +917,66 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
         <DialogHeader>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-amber-100 text-amber-800">
+              <div className="p-2 rounded-full bg-blue-100 text-blue-700">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold text-slate-900">
-                  {t.voice.title}
-                </DialogTitle>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-xl font-bold text-slate-900">
+                    {t.voice.title}
+                  </DialogTitle>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-semibold shadow-xs">
+                    <Bot className="w-3 h-3" /> Gemini 1.5 Flash
+                  </span>
+                </div>
                 <DialogDescription className="text-xs text-slate-500">
                   {t.voice.subtitle}
                 </DialogDescription>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowKeyInput(!showKeyInput)}
+              className={`p-1.5 rounded-lg border text-xs transition-all flex items-center gap-1 ${
+                customApiKey
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-700 font-medium"
+                  : "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800"
+              }`}
+              title="Configure Google Gemini API Key"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span className="text-[10px] hidden sm:inline">
+                {customApiKey ? "API Key Set" : "Gemini Key"}
+              </span>
+            </button>
           </div>
         </DialogHeader>
+
+        {showKeyInput && (
+          <form onSubmit={handleSaveKey} className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-blue-600" /> Google Gemini API Key
+              </span>
+              <span className="text-[10px] text-slate-400">Stored in browser localStorage</span>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                placeholder="AIzaSy..."
+                value={keyInputVal}
+                onChange={(e) => setKeyInputVal(e.target.value)}
+                className="text-xs h-8 font-mono bg-white"
+              />
+              <Button type="submit" size="sm" className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                <Check className="w-3.5 h-3.5 mr-1" /> Save
+              </Button>
+            </div>
+            <p className="text-[10px] text-slate-500">
+              Leave blank to use KrishiSetu Cloud Serverless Assistant. Enter your Google AI Studio key to use personal quota.
+            </p>
+          </form>
+        )}
 
         <div className="space-y-4 py-1">
           {/* Language Selector Tabs */}
@@ -907,7 +1011,30 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
 
           {/* Interactive Mic / Waveform Visualizer */}
           <div className="bg-slate-950 rounded-xl p-5 text-center text-white relative overflow-hidden flex flex-col items-center justify-center min-h-[180px] border border-slate-800 shadow-inner">
-            {isListening ? (
+            {isAiLoading ? (
+              <div className="space-y-3 flex flex-col items-center py-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                  <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                </div>
+                <div className="space-y-1 text-center">
+                  <p className="text-sm font-semibold text-blue-300">
+                    {language === "mr"
+                      ? "गुगल जेमिनी कृषी विश्लेषण करत आहे..."
+                      : language === "hi"
+                      ? "गूगल जेमिनी कृषि सलाह तैयार कर रहा है..."
+                      : "Google Gemini is analyzing agricultural advisory..."}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    {language === "mr"
+                      ? "हवामान, खत व बाजारभाव तपासले जात आहेत"
+                      : language === "hi"
+                      ? "मौसम, खाद एवं मंडी भाव का विश्लेषण जारी"
+                      : "Correlating weather, NPK fertigation & AGMARKNET rates"}
+                  </p>
+                </div>
+              </div>
+            ) : isListening ? (
               <div className="space-y-4 flex flex-col items-center">
                 {/* Live Animated Waveform Bars */}
                 <div className="flex items-center justify-center gap-1.5 h-12">
@@ -943,8 +1070,19 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
                 </div>
                 <p className="text-sm font-semibold text-slate-100">&ldquo;{activeQA.question}&rdquo;</p>
                 <div className="pt-2 border-t border-slate-800">
-                  <div className="text-xs text-emerald-400 font-semibold mb-1 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> {t.voice.advisoryLabel}:
+                  <div className="text-xs text-emerald-400 font-semibold mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-blue-400" /> {t.voice.advisoryLabel}:
+                    </span>
+                    {aiSource === "gemini" ? (
+                      <span className="text-[10px] text-blue-300 font-normal bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800">
+                        ⚡ Google Gemini 1.5
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-emerald-300 font-normal bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
+                        🌱 KrishiSetu NLU
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed">{activeQA.response}</p>
                   {activeQA.actionHint && (

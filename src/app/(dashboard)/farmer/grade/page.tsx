@@ -60,6 +60,60 @@ const CROP_FALLBACKS: Record<string, { size: string; ripeness: string; color: st
     color: "94% Bright Golden Yellow",
     blemish: "Minor broken seeds on 1.1% sample (< 2% tolerance for Grade A)",
   },
+  Cotton: {
+    size: "94% uniform long staple lint (30-31mm length)",
+    ripeness: "Fully opened clean boll, dry trash content < 3%",
+    color: "96% Bright Pearl White",
+    blemish: "Trash content 1.8% within Grade A CCI standard",
+  },
+  Wheat: {
+    size: "93% bold uniform grain size (Sharbati / Lokwan)",
+    ripeness: "Lustrous hard grain, moisture 11.5%",
+    color: "92% Amber Golden",
+    blemish: "Foreign matter < 0.5% (AGMARK Grade 1 compliant)",
+  },
+  Maize: {
+    size: "91% uniform grain filling, moisture 13.0%",
+    ripeness: "Hard flinty endosperm, fully dried",
+    color: "93% Bright Golden Yellow",
+    blemish: "Aflatoxin test passed, clean kernels",
+  },
+  Ginger: {
+    size: "92% thick hand rhizomes > 25mm diameter",
+    ripeness: "Crisp fiber-free fresh rhizome, aromatic pungent smell",
+    color: "90% Pale Golden Tan",
+    blemish: "Surface washed, soil residue < 1%",
+  },
+  Garlic: {
+    size: "94% uniform extra-bold bulb diameter (> 45mm)",
+    ripeness: "Firm compact cloves with tightly clinging white wrapper",
+    color: "95% Pure Snow White",
+    blemish: "No empty or sprouted cloves detected",
+  },
+  Turmeric: {
+    size: "95% uniform bold finger rhizomes > 60mm length",
+    ripeness: "Well-cured polished fingers, curcumin > 3.8%",
+    color: "96% Deep Saffron Polished Orange",
+    blemish: "Zero fungal infestation, optimal polish index",
+  },
+  Chickpea: {
+    size: "93% uniform bold seed count, moisture 10.8%",
+    ripeness: "Well-dried firm seed coat, zero weevil damage",
+    color: "91% Uniform Light Brownish Tan",
+    blemish: "Broken seeds < 1.5% (APMC Grade A standard)",
+  },
+  Banana: {
+    size: "94% uniform caliber (38-42 grade) and finger length > 18cm",
+    ripeness: "Color stage 2 (Clean Green export stage)",
+    color: "93% Fresh Olive Green",
+    blemish: "Calyx intact, zero crown rot or latex staining",
+  },
+  Grapes: {
+    size: "95% berry diameter 18-20mm with intact pedicel",
+    ripeness: "Brix TSS > 17.5%, crisp crunchy berry texture",
+    color: "94% Translucent Amber Green",
+    blemish: "Natural white bloom intact, zero cracked berries",
+  },
 };
 
 export default function GradeCropPage() {
@@ -368,6 +422,15 @@ export default function GradeCropPage() {
                     <SelectItem value="Pomegranate">Pomegranate ({t.market.crops.Pomegranate || "डाळिंब"})</SelectItem>
                     <SelectItem value="Green Chilli">Green Chilli ({t.market.crops["Green Chilli"] || "हिरवी मिरची"})</SelectItem>
                     <SelectItem value="Soyabean">Soyabean ({t.market.crops.Soyabean || "सोयाबीन"})</SelectItem>
+                    <SelectItem value="Cotton">Cotton ({t.market.crops.Cotton || "कापूस"})</SelectItem>
+                    <SelectItem value="Wheat">Wheat ({t.market.crops.Wheat || "गहू"})</SelectItem>
+                    <SelectItem value="Maize">Maize ({t.market.crops.Maize || "मका"})</SelectItem>
+                    <SelectItem value="Ginger">Ginger ({t.market.crops.Ginger || "आले"})</SelectItem>
+                    <SelectItem value="Garlic">Garlic ({t.market.crops.Garlic || "लसूण"})</SelectItem>
+                    <SelectItem value="Turmeric">Turmeric ({t.market.crops.Turmeric || "हळद"})</SelectItem>
+                    <SelectItem value="Chickpea">Chickpea ({t.market.crops.Chickpea || "हरभरा"})</SelectItem>
+                    <SelectItem value="Banana">Banana ({t.market.crops.Banana || "केळी"})</SelectItem>
+                    <SelectItem value="Grapes">Grapes ({t.market.crops.Grapes || "द्राक्षे"})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

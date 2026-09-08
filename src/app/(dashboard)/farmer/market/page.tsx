@@ -12,7 +12,24 @@ import { MapPin, Clock, TrendingUp, IndianRupee, RefreshCw, Sprout } from "lucid
 import { toast } from "sonner";
 import { translations } from "@/lib/i18n";
 
-const CROPS = ["Tomato", "Onion", "Potato", "Pomegranate", "Green Chilli", "Soyabean", "All"];
+const CROPS = [
+  "Tomato",
+  "Onion",
+  "Potato",
+  "Pomegranate",
+  "Green Chilli",
+  "Soyabean",
+  "Cotton",
+  "Wheat",
+  "Maize",
+  "Ginger",
+  "Garlic",
+  "Turmeric",
+  "Chickpea",
+  "Banana",
+  "Grapes",
+  "All",
+];
 
 export default function MarketPricesPage() {
   const { mandiPrices, fetchRealTimeMandiPrices, language } = useAppStore();
@@ -32,6 +49,16 @@ export default function MarketPricesPage() {
       if (mandiName.includes("Ahmednagar")) return "अहमदनगर बाजार समिती";
       if (mandiName.includes("Sangli")) return "सांगली हळद व शेतीमाल बाजार";
       if (mandiName.includes("Nagpur")) return "नागपूर कॉटन मार्केट यार्ड";
+      if (mandiName.includes("Jalgaon")) return "जळगाव केळी व शेतीमाल बाजार समिती";
+      if (mandiName.includes("Chhatrapati Sambhajinagar")) return "छत्रपती संभाजीनगर धान्य बाजार समिती";
+      if (mandiName.includes("Latur")) return "लातूर तेलबिया व डाळ मार्केट यार्ड";
+      if (mandiName.includes("Akola")) return "अकोला कापूस व तेलबिया बाजार";
+      if (mandiName.includes("Amravati")) return "अमरावती कृषी उत्पन्न बाजार समिती";
+      if (mandiName.includes("Junnar")) return "जुन्नर (ओतूर / नारायणगाव) भाजीपाला उपबाजार";
+      if (mandiName.includes("Rahata")) return "राहाता (शिर्डी) बाजार समिती";
+      if (mandiName.includes("Pimpalgaon")) return "पिंपळगाव बसवंत बाजार समिती";
+      if (mandiName.includes("Dindori")) return "दिंडोरी द्राक्ष व टोमॅटो मार्केट";
+      if (mandiName.includes("Nanded")) return "नांदेड कापूस व हळद बाजार समिती";
     } else if (language === "hi") {
       if (mandiName.includes("Baramati")) return "बारामती मंडी";
       if (mandiName.includes("Pune Gultekdi")) return "पुणे गुलटेकडी मार्केट यार्ड";
@@ -43,6 +70,16 @@ export default function MarketPricesPage() {
       if (mandiName.includes("Ahmednagar")) return "अहमदनगर मंडी";
       if (mandiName.includes("Sangli")) return "सांगली मंडी";
       if (mandiName.includes("Nagpur")) return "नागपुर कॉटन मार्केट यार्ड";
+      if (mandiName.includes("Jalgaon")) return "जलगांव केला मंडी";
+      if (mandiName.includes("Chhatrapati Sambhajinagar")) return "छत्रपति संभाजीनगर अनाज मंडी";
+      if (mandiName.includes("Latur")) return "लातूर तिलहन व दाल मार्केट";
+      if (mandiName.includes("Akola")) return "अकोला कपास मंडी";
+      if (mandiName.includes("Amravati")) return "अमरावती मंडी";
+      if (mandiName.includes("Junnar")) return "जुन्नर सब्जी उपमंडी";
+      if (mandiName.includes("Rahata")) return "राहाता (शिरडी) मंडी";
+      if (mandiName.includes("Pimpalgaon")) return "पिंपलगांव बसवंत मंडी";
+      if (mandiName.includes("Dindori")) return "दिंडोरी अंगूर मंडी";
+      if (mandiName.includes("Nanded")) return "नांदेड़ कपास व हल्दी मंडी";
     }
     return mandiName;
   };
