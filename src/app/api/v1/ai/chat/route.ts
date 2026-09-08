@@ -24,11 +24,10 @@ export async function POST(request: NextRequest) {
       process.env.GOOGLE_API_KEY ||
       process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-    // 1. If Gemini API key is available, call Google Gemini 1.5 Flash
+    // 1. If Gemini API key is available, call Google Gemini (3.6 Flash / latest)
     if (apiKey && apiKey.trim() !== "") {
       try {
-        const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
-
+        const candidateModels = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];
         const langName = language.startsWith("mr")
           ? "Marathi (मराठी)"
           : language.startsWith("hi")
@@ -53,37 +52,45 @@ Do not use complicated markdown asterisks or symbols so it sounds natural when s
           },
         ];
 
-        const response = await fetch(geminiEndpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents,
-            systemInstruction: {
-              parts: [{ text: systemInstruction }],
-            },
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 250,
-            },
-          }),
-        });
+        for (const model of candidateModels) {
+          try {
+            const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
 
-        if (response.ok) {
-          const geminiData = await response.json();
-          const candidateText =
-            geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-          if (candidateText && candidateText.trim().length > 0) {
-            return NextResponse.json({
-              reply: candidateText.trim(),
-              source: "gemini",
-              language,
-              actionHint: language.startsWith("mr")
-                ? "अधिक माहितीसाठी संबंधित मेनूवर क्लिक करा किंवा पुन्हा विचारा."
-                : language.startsWith("hi")
-                ? "अधिक जानकारी के लिए संबंधित मेनू पर जाएं या पुनः पूछें।"
-                : "Ask another query or navigate to relevant dashboard tabs.",
+            const response = await fetch(geminiEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents,
+                systemInstruction: {
+                  parts: [{ text: systemInstruction }],
+                },
+                generationConfig: {
+                  temperature: 0.3,
+                  maxOutputTokens: 250,
+                },
+              }),
             });
+
+            if (response.ok) {
+              const geminiData = await response.json();
+              const candidateText =
+                geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+              if (candidateText && candidateText.trim().length > 0) {
+                return NextResponse.json({
+                  reply: candidateText.trim(),
+                  source: "gemini",
+                  language,
+                  actionHint: language.startsWith("mr")
+                    ? "अधिक माहितीसाठी संबंधित मेनूवर क्लिक करा किंवा पुन्हा विचारा."
+                    : language.startsWith("hi")
+                    ? "अधिक जानकारी के लिए संबंधित मेनू पर जाएं या पुनः पूछें।"
+                    : "Ask another query or navigate to relevant dashboard tabs.",
+                });
+              }
+            }
+          } catch {
+            // try next model candidate
           }
         }
       } catch {
