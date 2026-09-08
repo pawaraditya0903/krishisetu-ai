@@ -918,3 +918,4 @@ export const WIDE_FPO_POOLS = [
     closes_at: new Date(Date.now() + 20 * 3600 * 1000).toISOString(),
   },
 ];
+
