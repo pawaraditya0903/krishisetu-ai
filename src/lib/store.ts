@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   User,
+  Role,
   CropLot,
   Pool,
   MandiPrice,
@@ -10,6 +11,14 @@ import {
   LogisticsRoutePlan,
   FarmLocation,
   AssistantMessage,
+  FPOOrganization,
+  FPOCollectionCenter,
+  MandiMaster,
+  CropCatalogItem,
+  Transporter,
+  FleetVehicle,
+  PlatformSettings,
+  RolePermissions,
 } from "./types";
 import { Language } from "./i18n";
 import { queueOfflineAction } from "./offline-queue";
@@ -18,6 +27,15 @@ import {
   WIDE_FPO_POOLS,
   calculateDynamicMandisForLocation,
 } from "./agricultural-data";
+import {
+  initialUsers,
+  initialFPOs,
+  initialMandisMaster,
+  initialCropsCatalog,
+  initialTransporters,
+  initialPlatformSettings,
+  initialRolePermissions,
+} from "./admin-initial-data";
 
 interface AppState {
   currentUser: User | null;
@@ -32,6 +50,15 @@ interface AppState {
   auditEvents: AuditEvent[];
   routePlans: LogisticsRoutePlan[];
   chatMessages: AssistantMessage[];
+
+  // Admin Managed Platform Entities
+  users: User[];
+  fpos: FPOOrganization[];
+  mandisMaster: MandiMaster[];
+  cropsCatalog: CropCatalogItem[];
+  transporters: Transporter[];
+  platformSettings: PlatformSettings;
+  rolePermissions: RolePermissions[];
 
   // Actions
   login: (user: User, token?: string) => void;
@@ -72,6 +99,44 @@ interface AppState {
   ) => void;
 
   fetchRealTimeMandiPrices: (crop?: string, mandi?: string) => Promise<void>;
+
+  // User Management Actions
+  addUser: (user: Omit<User, "id"> | User) => User;
+  updateUser: (id: string, updates: Partial<User>) => void;
+  setUserStatus: (id: string, status: User["status"]) => void;
+  deleteUser: (id: string) => { success: boolean; message?: string };
+  assignFarmerToFPO: (farmerId: string, fpoId: string) => void;
+  removeFarmerFromFPO: (farmerId: string, fpoId: string) => void;
+
+  // FPO Management Actions
+  addFPO: (fpo: Omit<FPOOrganization, "id"> | FPOOrganization) => FPOOrganization;
+  updateFPO: (id: string, updates: Partial<FPOOrganization>) => void;
+  setFPOStatus: (id: string, status: FPOOrganization["status"]) => void;
+  deleteFPO: (id: string) => { success: boolean; message?: string };
+  addCollectionCenter: (fpoId: string, center: Omit<FPOCollectionCenter, "id" | "fpoId">) => void;
+  updateCollectionCenter: (fpoId: string, centerId: string, updates: Partial<FPOCollectionCenter>) => void;
+
+  // Mandi Master Actions & Bulk CSV Import
+  addMandi: (mandi: Omit<MandiMaster, "id"> | MandiMaster) => MandiMaster;
+  updateMandi: (id: string, updates: Partial<MandiMaster>) => void;
+  setMandiStatus: (id: string, status: MandiMaster["status"]) => void;
+  deleteMandi: (id: string) => void;
+  bulkImportMandis: (imported: Array<Partial<MandiMaster>>) => { added: number; updated: number; skipped: number };
+
+  // Crop Catalog Actions
+  addCrop: (crop: Omit<CropCatalogItem, "id"> | CropCatalogItem) => CropCatalogItem;
+  updateCrop: (id: string, updates: Partial<CropCatalogItem>) => void;
+  setCropStatus: (id: string, status: CropCatalogItem["status"]) => void;
+
+  // Logistics Actions
+  addTransporter: (transporter: Omit<Transporter, "id"> | Transporter) => Transporter;
+  updateTransporter: (id: string, updates: Partial<Transporter>) => void;
+  addVehicle: (transporterId: string, vehicle: Omit<FleetVehicle, "id">) => void;
+  updateVehicleStatus: (transporterId: string, vehicleId: string, status: FleetVehicle["status"]) => void;
+
+  // Discovery Settings & Roles
+  updatePlatformSettings: (settings: Partial<PlatformSettings>) => void;
+  updateRolePermissions: (role: Role, updates: Partial<RolePermissions>) => void;
 
   resetDemoData: () => void;
 }
@@ -373,6 +438,15 @@ export const useAppStore = create<AppState>()(
       auditEvents: initialAuditEvents,
       routePlans: initialRoutePlans,
       chatMessages: [],
+
+      // Admin Managed Platform Entities
+      users: initialUsers,
+      fpos: initialFPOs,
+      mandisMaster: initialMandisMaster,
+      cropsCatalog: initialCropsCatalog,
+      transporters: initialTransporters,
+      platformSettings: initialPlatformSettings,
+      rolePermissions: initialRolePermissions,
 
       login: (user, token) => {
         const userWithToken = { ...user, accessToken: token || user.accessToken };
@@ -754,6 +828,609 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      // User Management Actions
+      addUser: (userData) => {
+        const anyUser = userData as Partial<User>;
+        const id = anyUser.id || `${userData.role.toUpperCase().charAt(0)}-${Date.now().toString().slice(-4)}`;
+        const now = new Date().toISOString();
+        const newUser: User = {
+          ...userData,
+          id,
+          status: userData.status || "Active",
+          createdAt: userData.createdAt || now,
+          updatedAt: now,
+        };
+
+        set((state) => {
+          let updatedFpos = state.fpos;
+          if (newUser.role === "farmer" && newUser.fpoId) {
+            updatedFpos = state.fpos.map((fpo) =>
+              fpo.id === newUser.fpoId && !fpo.memberFarmerIds.includes(newUser.id)
+                ? { ...fpo, memberFarmerIds: [...fpo.memberFarmerIds, newUser.id] }
+                : fpo
+            );
+          }
+          return {
+            users: [newUser, ...state.users],
+            fpos: updatedFpos,
+          };
+        });
+
+        get().addAuditEvent(
+          "CREATE_USER",
+          "USER",
+          newUser.id,
+          `Registered ${newUser.role.toUpperCase()} "${newUser.name}" (${newUser.phone}) in ${newUser.district || "National Network"}`
+        );
+
+        return newUser;
+      },
+
+      updateUser: (id, updates) => {
+        const now = new Date().toISOString();
+        set((state) => {
+          const updatedUsers = state.users.map((u) =>
+            u.id === id ? { ...u, ...updates, updatedAt: now } : u
+          );
+          const isCurrentUser = state.currentUser?.id === id;
+          return {
+            users: updatedUsers,
+            currentUser: isCurrentUser
+              ? { ...state.currentUser!, ...updates, updatedAt: now }
+              : state.currentUser,
+          };
+        });
+
+        get().addAuditEvent(
+          "UPDATE_USER",
+          "USER",
+          id,
+          `Updated user profile details for ${id}`
+        );
+      },
+
+      setUserStatus: (id, status) => {
+        set((state) => ({
+          users: state.users.map((u) => (u.id === id ? { ...u, status } : u)),
+        }));
+
+        get().addAuditEvent(
+          "USER_STATUS_CHANGE",
+          "USER",
+          id,
+          `User account status changed to ${status}`
+        );
+      },
+
+      deleteUser: (id) => {
+        const user = get().users.find((u) => u.id === id);
+        if (!user) return { success: false, message: "User record not found." };
+        if (user.role === "admin") {
+          const adminCount = get().users.filter((u) => u.role === "admin").length;
+          if (adminCount <= 1) {
+            return {
+              success: false,
+              message: "Action blocked: Cannot delete the sole Administrator account.",
+            };
+          }
+        }
+        if (get().currentUser?.id === id) {
+          return {
+            success: false,
+            message: "Action blocked: You cannot delete your currently active session.",
+          };
+        }
+
+        set((state) => ({
+          users: state.users.filter((u) => u.id !== id),
+          fpos: state.fpos.map((fpo) => ({
+            ...fpo,
+            memberFarmerIds: fpo.memberFarmerIds.filter((fId) => fId !== id),
+            managerIds: fpo.managerIds.filter((mId) => mId !== id),
+          })),
+        }));
+
+        get().addAuditEvent(
+          "DELETE_USER",
+          "USER",
+          id,
+          `Removed user "${user.name}" (${user.role}) from the platform.`
+        );
+
+        return { success: true };
+      },
+
+      assignFarmerToFPO: (farmerId, fpoId) => {
+        set((state) => ({
+          users: state.users.map((u) =>
+            u.id === farmerId ? { ...u, fpoId } : u
+          ),
+          fpos: state.fpos.map((fpo) => {
+            if (fpo.id === fpoId) {
+              return fpo.memberFarmerIds.includes(farmerId)
+                ? fpo
+                : { ...fpo, memberFarmerIds: [...fpo.memberFarmerIds, farmerId] };
+            }
+            return {
+              ...fpo,
+              memberFarmerIds: fpo.memberFarmerIds.filter((id) => id !== farmerId),
+            };
+          }),
+        }));
+
+        const fpo = get().fpos.find((f) => f.id === fpoId);
+        get().addAuditEvent(
+          "ASSIGN_FARMER_FPO",
+          "FPO_MEMBERSHIP",
+          farmerId,
+          `Assigned farmer to ${fpo?.name || fpoId}`
+        );
+      },
+
+      removeFarmerFromFPO: (farmerId, fpoId) => {
+        set((state) => ({
+          users: state.users.map((u) =>
+            u.id === farmerId && u.fpoId === fpoId ? { ...u, fpoId: undefined } : u
+          ),
+          fpos: state.fpos.map((fpo) =>
+            fpo.id === fpoId
+              ? {
+                  ...fpo,
+                  memberFarmerIds: fpo.memberFarmerIds.filter((id) => id !== farmerId),
+                }
+              : fpo
+          ),
+        }));
+
+        get().addAuditEvent(
+          "REMOVE_FARMER_FPO",
+          "FPO_MEMBERSHIP",
+          farmerId,
+          `Removed farmer from FPO roster`
+        );
+      },
+
+      // FPO Management Actions
+      addFPO: (fpoData) => {
+        const anyFPO = fpoData as Partial<FPOOrganization>;
+        const id = anyFPO.id || `FPO-${Date.now().toString().slice(-4)}`;
+        const newFPO: FPOOrganization = {
+          ...fpoData,
+          id,
+          collectionCenters: fpoData.collectionCenters || [],
+          supportedCrops: fpoData.supportedCrops || ["Tomato", "Onion"],
+          serviceFeePaisePerQtl: fpoData.serviceFeePaisePerQtl || 150,
+          poolMinKg: fpoData.poolMinKg || 500,
+          poolMaxKg: fpoData.poolMaxKg || 10000,
+          defaultPoolClosingDays: fpoData.defaultPoolClosingDays || 3,
+          managerIds: fpoData.managerIds || [],
+          memberFarmerIds: fpoData.memberFarmerIds || [],
+          status: fpoData.status || "Active",
+          createdAt: fpoData.createdAt || new Date().toISOString(),
+        };
+
+        set((state) => ({ fpos: [newFPO, ...state.fpos] }));
+
+        get().addAuditEvent(
+          "CREATE_FPO",
+          "FPO",
+          newFPO.id,
+          `Registered FPO "${newFPO.name}" in ${newFPO.district}, ${newFPO.state}`
+        );
+
+        return newFPO;
+      },
+
+      updateFPO: (id, updates) => {
+        set((state) => ({
+          fpos: state.fpos.map((fpo) => (fpo.id === id ? { ...fpo, ...updates } : fpo)),
+        }));
+
+        get().addAuditEvent("UPDATE_FPO", "FPO", id, `Updated FPO profile`);
+      },
+
+      setFPOStatus: (id, status) => {
+        set((state) => ({
+          fpos: state.fpos.map((fpo) => (fpo.id === id ? { ...fpo, status } : fpo)),
+        }));
+
+        get().addAuditEvent(
+          "FPO_STATUS_CHANGE",
+          "FPO",
+          id,
+          `FPO status transitioned to ${status}`
+        );
+      },
+
+      deleteFPO: (id) => {
+        const fpo = get().fpos.find((f) => f.id === id);
+        if (!fpo) return { success: false, message: "FPO record not found." };
+        if (fpo.memberFarmerIds.length > 0) {
+          return {
+            success: false,
+            message: `Cannot delete FPO with ${fpo.memberFarmerIds.length} registered member farmers. Reassign farmers first.`,
+          };
+        }
+
+        set((state) => ({
+          fpos: state.fpos.filter((f) => f.id !== id),
+        }));
+
+        get().addAuditEvent(
+          "DELETE_FPO",
+          "FPO",
+          id,
+          `Removed FPO "${fpo.name}" from active registry.`
+        );
+
+        return { success: true };
+      },
+
+      addCollectionCenter: (fpoId, center) => {
+        const centerId = `CC-${Date.now().toString().slice(-4)}`;
+        const newCenter: FPOCollectionCenter = {
+          ...center,
+          id: centerId,
+          fpoId,
+          status: center.status || "Active",
+        };
+
+        set((state) => ({
+          fpos: state.fpos.map((fpo) =>
+            fpo.id === fpoId
+              ? { ...fpo, collectionCenters: [...fpo.collectionCenters, newCenter] }
+              : fpo
+          ),
+        }));
+
+        get().addAuditEvent(
+          "ADD_COLLECTION_CENTER",
+          "FPO_HUB",
+          centerId,
+          `Added collection center "${newCenter.name}" in ${newCenter.taluka}`
+        );
+      },
+
+      updateCollectionCenter: (fpoId, centerId, updates) => {
+        set((state) => ({
+          fpos: state.fpos.map((fpo) =>
+            fpo.id === fpoId
+              ? {
+                  ...fpo,
+                  collectionCenters: fpo.collectionCenters.map((cc) =>
+                    cc.id === centerId ? { ...cc, ...updates } : cc
+                  ),
+                }
+              : fpo
+          ),
+        }));
+
+        get().addAuditEvent(
+          "UPDATE_COLLECTION_CENTER",
+          "FPO_HUB",
+          centerId,
+          `Updated collection center configuration`
+        );
+      },
+
+      // Mandi Master Registry Actions & CSV Import
+      addMandi: (mandiData) => {
+        const anyMandi = mandiData as Partial<MandiMaster>;
+        const id = anyMandi.id || `MANDI-${Date.now().toString().slice(-4)}`;
+        const newMandi: MandiMaster = {
+          ...mandiData,
+          id,
+          status: mandiData.status || "Active",
+          dataSource: mandiData.dataSource || "Manual Admin",
+          lastSyncAt: mandiData.lastSyncAt || new Date().toISOString(),
+        };
+
+        set((state) => ({ mandisMaster: [newMandi, ...state.mandisMaster] }));
+
+        // Refresh dynamic mandi prices if location is active
+        const { farmLocation, searchRadiusKm } = get();
+        if (farmLocation) {
+          const dynamic = calculateDynamicMandisForLocation(
+            farmLocation.lat,
+            farmLocation.lng,
+            "All",
+            undefined,
+            searchRadiusKm
+          );
+          set({ mandiPrices: dynamic.mandis });
+        }
+
+        get().addAuditEvent(
+          "CREATE_MANDI",
+          "MANDI_MASTER",
+          newMandi.id,
+          `Added Mandi "${newMandi.mandi}" in ${newMandi.district}, ${newMandi.state} (${newMandi.lat.toFixed(4)}, ${newMandi.lng.toFixed(4)})`
+        );
+
+        return newMandi;
+      },
+
+      updateMandi: (id, updates) => {
+        set((state) => ({
+          mandisMaster: state.mandisMaster.map((m) =>
+            m.id === id ? { ...m, ...updates, lastSyncAt: new Date().toISOString() } : m
+          ),
+        }));
+
+        // Refresh dynamic mandi prices if location is active
+        const { farmLocation, searchRadiusKm } = get();
+        if (farmLocation) {
+          const dynamic = calculateDynamicMandisForLocation(
+            farmLocation.lat,
+            farmLocation.lng,
+            "All",
+            undefined,
+            searchRadiusKm
+          );
+          set({ mandiPrices: dynamic.mandis });
+        }
+
+        get().addAuditEvent("UPDATE_MANDI", "MANDI_MASTER", id, `Updated Mandi configuration`);
+      },
+
+      setMandiStatus: (id, status) => {
+        set((state) => ({
+          mandisMaster: state.mandisMaster.map((m) =>
+            m.id === id ? { ...m, status, lastSyncAt: new Date().toISOString() } : m
+          ),
+        }));
+
+        get().addAuditEvent(
+          "MANDI_STATUS_CHANGE",
+          "MANDI_MASTER",
+          id,
+          `Mandi operational status set to ${status}`
+        );
+      },
+
+      deleteMandi: (id) => {
+        const mandi = get().mandisMaster.find((m) => m.id === id);
+        set((state) => ({
+          mandisMaster: state.mandisMaster.filter((m) => m.id !== id),
+        }));
+
+        get().addAuditEvent(
+          "DELETE_MANDI",
+          "MANDI_MASTER",
+          id,
+          `Removed Mandi "${mandi?.mandi || id}" from registry`
+        );
+      },
+
+      bulkImportMandis: (imported) => {
+        let added = 0;
+        let updated = 0;
+        let skipped = 0;
+
+        const current = [...get().mandisMaster];
+
+        imported.forEach((row, idx) => {
+          if (!row.mandi || typeof row.lat !== "number" || typeof row.lng !== "number") {
+            skipped++;
+            return;
+          }
+          if (row.lat < -90 || row.lat > 90 || row.lng < -180 || row.lng > 180) {
+            skipped++;
+            return;
+          }
+
+          const cleanName = row.mandi.trim().toLowerCase();
+          const existingIdx = current.findIndex(
+            (m) =>
+              m.mandi.toLowerCase().trim() === cleanName ||
+              (row.marketCode && m.marketCode && m.marketCode.toLowerCase() === row.marketCode.toLowerCase())
+          );
+
+          if (existingIdx >= 0) {
+            current[existingIdx] = {
+              ...current[existingIdx],
+              ...row,
+              lastSyncAt: new Date().toISOString(),
+            } as MandiMaster;
+            updated++;
+          } else {
+            current.unshift({
+              id: row.id || `MANDI-IMP-${Date.now()}-${idx}`,
+              mandi: row.mandi.trim(),
+              marketCode: row.marketCode || `MKT-${Date.now().toString().slice(-4)}`,
+              district: row.district || "Maharashtra",
+              state: row.state || "Maharashtra",
+              pincode: row.pincode,
+              lat: row.lat,
+              lng: row.lng,
+              supportedCrops: row.supportedCrops && row.supportedCrops.length > 0 ? row.supportedCrops : ["Tomato", "Onion"],
+              dataSource: row.dataSource || "Manual Admin",
+              status: row.status || "Active",
+              lastSyncAt: new Date().toISOString(),
+            });
+            added++;
+          }
+        });
+
+        set({ mandisMaster: current });
+
+        // Refresh dynamic mandi prices if location is active
+        const { farmLocation, searchRadiusKm } = get();
+        if (farmLocation) {
+          const dynamic = calculateDynamicMandisForLocation(
+            farmLocation.lat,
+            farmLocation.lng,
+            "All",
+            undefined,
+            searchRadiusKm
+          );
+          set({ mandiPrices: dynamic.mandis });
+        }
+
+        get().addAuditEvent(
+          "BULK_IMPORT_MANDIS",
+          "MANDI_MASTER",
+          `BATCH-${Date.now()}`,
+          `Bulk Mandi Import completed: ${added} added, ${updated} updated, ${skipped} skipped.`
+        );
+
+        return { added, updated, skipped };
+      },
+
+      // Crop Catalog Actions
+      addCrop: (cropData) => {
+        const anyCrop = cropData as Partial<CropCatalogItem>;
+        const id = anyCrop.id || `CROP-${cropData.name.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-3)}`;
+        const newCrop: CropCatalogItem = {
+          ...cropData,
+          id,
+          status: cropData.status || "Active",
+        };
+
+        set((state) => ({ cropsCatalog: [newCrop, ...state.cropsCatalog] }));
+
+        get().addAuditEvent(
+          "CREATE_CROP",
+          "CROP_CATALOG",
+          newCrop.id,
+          `Added crop "${newCrop.name}" (${newCrop.marathiName}) with ${newCrop.gradeRules.length} grade rules`
+        );
+
+        return newCrop;
+      },
+
+      updateCrop: (id, updates) => {
+        set((state) => ({
+          cropsCatalog: state.cropsCatalog.map((c) =>
+            c.id === id ? { ...c, ...updates } : c
+          ),
+        }));
+
+        get().addAuditEvent("UPDATE_CROP", "CROP_CATALOG", id, `Updated crop specifications`);
+      },
+
+      setCropStatus: (id, status) => {
+        set((state) => ({
+          cropsCatalog: state.cropsCatalog.map((c) =>
+            c.id === id ? { ...c, status } : c
+          ),
+        }));
+
+        get().addAuditEvent("CROP_STATUS_CHANGE", "CROP_CATALOG", id, `Crop status set to ${status}`);
+      },
+
+      // Logistics Actions
+      addTransporter: (transporterData) => {
+        const anyTrans = transporterData as Partial<Transporter>;
+        const id = anyTrans.id || `TR-${Date.now().toString().slice(-4)}`;
+        const newTransporter: Transporter = {
+          ...transporterData,
+          id,
+          vehicles: transporterData.vehicles || [],
+          status: transporterData.status || "Active",
+        };
+
+        set((state) => ({ transporters: [newTransporter, ...state.transporters] }));
+
+        get().addAuditEvent(
+          "CREATE_TRANSPORTER",
+          "LOGISTICS",
+          newTransporter.id,
+          `Registered logistics partner "${newTransporter.name}" (${newTransporter.phone})`
+        );
+
+        return newTransporter;
+      },
+
+      updateTransporter: (id, updates) => {
+        set((state) => ({
+          transporters: state.transporters.map((tr) =>
+            tr.id === id ? { ...tr, ...updates } : tr
+          ),
+        }));
+
+        get().addAuditEvent("UPDATE_TRANSPORTER", "LOGISTICS", id, `Updated transporter profile`);
+      },
+
+      addVehicle: (transporterId, vehicle) => {
+        const vehicleId = `VEH-${Date.now().toString().slice(-4)}`;
+        const newVehicle: FleetVehicle = {
+          ...vehicle,
+          id: vehicleId,
+          status: vehicle.status || "Available",
+        };
+
+        set((state) => ({
+          transporters: state.transporters.map((tr) =>
+            tr.id === transporterId
+              ? { ...tr, vehicles: [...tr.vehicles, newVehicle] }
+              : tr
+          ),
+        }));
+
+        get().addAuditEvent(
+          "ADD_VEHICLE",
+          "FLEET",
+          vehicleId,
+          `Added vehicle ${newVehicle.regNumber} (${newVehicle.vehicleType})`
+        );
+      },
+
+      updateVehicleStatus: (transporterId, vehicleId, status) => {
+        set((state) => ({
+          transporters: state.transporters.map((tr) =>
+            tr.id === transporterId
+              ? {
+                  ...tr,
+                  vehicles: tr.vehicles.map((v) =>
+                    v.id === vehicleId ? { ...v, status } : v
+                  ),
+                }
+              : tr
+          ),
+        }));
+
+        get().addAuditEvent(
+          "VEHICLE_STATUS_CHANGE",
+          "FLEET",
+          vehicleId,
+          `Vehicle status set to ${status}`
+        );
+      },
+
+      // Discovery Settings & Roles
+      updatePlatformSettings: (settings) => {
+        set((state) => ({
+          platformSettings: { ...state.platformSettings, ...settings },
+          searchRadiusKm:
+            settings.defaultSearchRadiusKm !== undefined
+              ? settings.defaultSearchRadiusKm
+              : state.searchRadiusKm,
+        }));
+
+        get().addAuditEvent(
+          "UPDATE_SETTINGS",
+          "PLATFORM_SETTINGS",
+          "GLOBAL",
+          `Updated platform discovery and deduction parameters`
+        );
+      },
+
+      updateRolePermissions: (role, updates) => {
+        set((state) => ({
+          rolePermissions: state.rolePermissions.map((rp) =>
+            rp.role === role ? { ...rp, ...updates } : rp
+          ),
+        }));
+
+        get().addAuditEvent(
+          "UPDATE_PERMISSIONS",
+          "ROLE_PERMISSIONS",
+          role,
+          `Modified RBAC security permissions for ${role}`
+        );
+      },
+
       resetDemoData: () =>
         set({
           lots: initialLots,
@@ -762,6 +1439,13 @@ export const useAppStore = create<AppState>()(
           settlements: initialSettlements,
           auditEvents: initialAuditEvents,
           routePlans: initialRoutePlans,
+          users: initialUsers,
+          fpos: initialFPOs,
+          mandisMaster: initialMandisMaster,
+          cropsCatalog: initialCropsCatalog,
+          transporters: initialTransporters,
+          platformSettings: initialPlatformSettings,
+          rolePermissions: initialRolePermissions,
         }),
     }),
     {

@@ -1,0 +1,9 @@
+mandi,marketCode,district,state,pincode,lat,lng,crops,source
+"Parbhani APMC","MH-PBN-001","Parbhani","Maharashtra","431401",19.2608,76.7748,"Soybean;Cotton;Wheat;Gram;Tomato","Agmarknet (Govt of India)"
+"Lasalgaon APMC","MH-NSK-003","Nashik","Maharashtra","422306",20.1464,74.2289,"Onion;Tomato;Soybean","Agmarknet (Govt of India)"
+"Pimpalgaon Baswant APMC","MH-NSK-002","Nashik","Maharashtra","422209",20.1700,73.9800,"Tomato;Onion;Grapes","e-NAM"
+"Indore Krishi Mandi","MP-IND-001","Indore","Madhya Pradesh","452001",22.7196,75.8577,"Soybean;Wheat;Gram","e-NAM"
+"Delhi Azadpur Mandi","DL-DEL-001","North Delhi","Delhi","110033",28.7126,77.1751,"Tomato;Onion;Potato;Apple","Agmarknet (Govt of India)"
+"Bengaluru Yeshwanthpur APMC","KA-BLR-001","Bengaluru Urban","Karnataka","560022",13.0285,77.5457,"Tomato;Onion;Potato;Pomegranate","Agmarknet (Govt of India)"
+"Surat APMC","GJ-SUR-001","Surat","Gujarat","395003",21.1702,72.8311,"Tomato;Banana;Cotton","e-NAM"
+"Guntur Chilli Yard","AP-GNT-001","Guntur","Andhra Pradesh","522004",16.3067,80.4365,"Chilli;Cotton;Tobacco","Agmarknet (Govt of India)"

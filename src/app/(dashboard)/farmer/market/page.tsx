@@ -21,12 +21,18 @@ import {
   AlertTriangle,
   Info,
   Truck,
+  List,
+  Map as MapIcon,
+  Eye,
+  Sliders,
 } from "lucide-react";
 import { toast } from "sonner";
 import { translations } from "@/lib/i18n";
 import { calculateDynamicMandisForLocation } from "@/lib/agricultural-data";
 import { formatTravelTime } from "@/lib/geo-locations";
 import LocationSelectorModal from "@/components/layout/LocationSelectorModal";
+import InteractiveAgricultureMap from "@/components/dashboard/InteractiveAgricultureMap";
+import LocationPickerModal, { SelectedLocationData } from "@/components/location/LocationPickerModal";
 
 const CROPS = [
   "Tomato",
@@ -60,10 +66,12 @@ type SortOption = "nearest" | "price" | "net" | "freshness";
 export default function MarketPricesPage() {
   const {
     farmLocation,
+    setFarmLocation,
     fetchRealTimeMandiPrices,
     language,
     searchRadiusKm,
     setSearchRadiusKm,
+    platformSettings,
   } = useAppStore();
 
   const t = translations[language] || translations.en;
@@ -74,6 +82,9 @@ export default function MarketPricesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("nearest");
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isLocationPickerModalOpen, setIsLocationPickerModalOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"both" | "list" | "map">("both");
+  const [showCustomSlider, setShowCustomSlider] = useState(false);
 
   // Dynamic cost calculator state
   const [quantityKg, setQuantityKg] = useState(500);
@@ -231,11 +242,11 @@ export default function MarketPricesPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setIsLocationModalOpen(true)}
-          className="text-xs shrink-0 self-start sm:self-auto border-slate-300 text-slate-700 hover:bg-slate-50"
+          onClick={() => setIsLocationPickerModalOpen(true)}
+          className="text-xs shrink-0 self-start sm:self-auto border-emerald-300 text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100"
         >
           <Navigation className="w-3.5 h-3.5 mr-1 text-emerald-700" />
-          {isMr ? "स्थान बदला" : isHi ? "स्थान बदलें" : "Change Location"}
+          {isMr ? "स्थान बदला (GPS / नकाशा)" : isHi ? "स्थान बदलें" : "Change Farm Pin"}
         </Button>
       </div>
 
@@ -266,57 +277,162 @@ export default function MarketPricesPage() {
         })}
       </div>
 
-      {/* Filter & Sorting Toolbar */}
-      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Radius Filter */}
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-600 flex items-center gap-1">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-700" />
-            {isMr ? "शोध त्रिज्या:" : "Search Radius:"}
-          </span>
-          <select
-            value={searchRadiusKm}
-            onChange={(e) => setSearchRadiusKm(parseInt(e.target.value, 10))}
-            className="bg-white border border-slate-300 rounded-md p-1.5 text-xs font-medium text-slate-800"
-          >
-            {RADIUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+      {/* Search Radius & Sorting Control Center */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+              <SlidersHorizontal className="w-4 h-4 text-emerald-700" />
+              {isMr ? "शोध परीघ निवडा:" : "Mandi Discovery Range:"}
+            </span>
+            <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-800 border-emerald-300 font-mono">
+              {searchRadiusKm >= 9999 ? "All India" : `${searchRadiusKm} km`}
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {platformSettings?.allowFarmerCustomRadius && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCustomSlider(!showCustomSlider)}
+                className="text-xs text-emerald-800 hover:text-emerald-900 h-7"
+              >
+                <Sliders className="w-3 h-3 mr-1" />
+                {showCustomSlider ? (isMr ? "स्लायडर लपवा" : "Hide Slider") : (isMr ? "कस्टम स्लायडर" : "Custom Range Slider")}
+              </Button>
+            )}
+
+            {/* Sorting Selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                {isMr ? "क्रमवारी:" : "Sort by:"}
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-800"
+              >
+                <option value="nearest">{isMr ? "जवळची मंडी (Nearest)" : "Nearest mandi"}</option>
+                <option value="price">{isMr ? "सर्वोच्च बाजारभाव (Highest Price)" : "Highest modal price"}</option>
+                <option value="net">{isMr ? "सर्वोत्तम निव्वळ प्राप्ती (Best Net)" : "Best net realization"}</option>
+                <option value="freshness">{isMr ? "ताजा बाजार अपडेट (Latest)" : "Latest update"}</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        {/* Sorting Selector */}
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-600 flex items-center gap-1">
-            <ArrowUpDown className="w-3.5 h-3.5 text-emerald-700" />
-            {isMr ? "क्रमवारी:" : "Sort by:"}
-          </span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="bg-white border border-slate-300 rounded-md p-1.5 text-xs font-medium text-slate-800"
-          >
-            <option value="nearest">
-              {isMr ? "जवळची मंडी (Nearest)" : "Nearest mandi"}
-            </option>
-            <option value="price">
-              {isMr ? "सर्वोच्च बाजारभाव (Highest Price)" : "Highest modal price"}
-            </option>
-            <option value="net">
-              {isMr ? "सर्वोत्तम अंदाजे निव्वळ प्राप्ती (Best Net)" : "Best estimated net outcome"}
-            </option>
-            <option value="freshness">
-              {isMr ? "ताजा बाजार अपडेट (Latest Update)" : "Latest market update"}
-            </option>
-          </select>
+        {/* Radius Option Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(platformSettings?.radiusExpansionSteps || [25, 50, 100, 200, 300, 500, 1000]).map((r) => {
+            const isSelected = searchRadiusKm === r;
+            return (
+              <button
+                key={r}
+                onClick={() => setSearchRadiusKm(r)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-emerald-700 text-white shadow-xs scale-105"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {r >= 1000 ? "1000 km (Pan-India)" : `${r} km`}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Custom Range Slider (Expanded) */}
+        {showCustomSlider && (
+          <div className="p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-2 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
+              <span>{isMr ? "कस्टम शोध त्रिज्या स्लायडर:" : "Custom Range Slider:"}</span>
+              <span className="font-mono font-bold text-sm text-emerald-800">{searchRadiusKm} km</span>
+            </div>
+            <input
+              type="range"
+              min={platformSettings?.minRadiusKm || 25}
+              max={platformSettings?.maxRadiusKm || 1000}
+              step="5"
+              value={searchRadiusKm}
+              onChange={(e) => setSearchRadiusKm(parseInt(e.target.value, 10))}
+              className="w-full accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>{platformSettings?.minRadiusKm || 25} km</span>
+              <span>{platformSettings?.maxRadiusKm || 1000} km</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile View Toggle Switcher */}
+      <div className="flex md:hidden items-center justify-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+        <button
+          onClick={() => setMobileView("list")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+            mobileView === "list" ? "bg-white text-emerald-800 shadow-xs font-bold" : "text-slate-600"
+          }`}
+        >
+          <List className="w-3.5 h-3.5" /> {isMr ? "यादी दृश्य" : "List View"}
+        </button>
+        <button
+          onClick={() => setMobileView("map")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+            mobileView === "map" ? "bg-white text-emerald-800 shadow-xs font-bold" : "text-slate-600"
+          }`}
+        >
+          <MapIcon className="w-3.5 h-3.5" /> {isMr ? "नकाशा दृश्य" : "Map View"}
+        </button>
+        <button
+          onClick={() => setMobileView("both")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+            mobileView === "both" ? "bg-white text-emerald-800 shadow-xs font-bold" : "text-slate-600"
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" /> {isMr ? "दोन्ही" : "Both"}
+        </button>
+      </div>
+
+      {/* Interactive Agriculture Map with Dynamic Radius Circle */}
+      <div className={`${mobileView === "list" ? "hidden md:block" : "block"}`}>
+        <Card className="bg-white border-slate-200 shadow-xs overflow-hidden">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-700" />
+                {isMr ? "थेट कृषी नकाशा आणि शोध परीघ" : "Live Mandi Discovery Radar & Radius Circle"}
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500">
+                {isMr
+                  ? `आपल्या शेताभोवती ${searchRadiusKm} किमी परिसरातील उपलब्ध बाजारपेठा व दर`
+                  : `Showing APMC markets within ${searchRadiusKm} km radius circle of ${farmLocation?.label || "your farm"}. Click any pin to inspect rates.`}
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 font-mono text-xs">
+              Radius: {searchRadiusKm} km
+            </Badge>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <InteractiveAgricultureMap
+              centerLat={farmerLat}
+              centerLng={farmerLng}
+              radiusKm={searchRadiusKm}
+              showRadiusOverlay={true}
+              heightClassName="h-72 sm:h-96"
+              selectedMarkerId={selectedMandiId}
+              onSelectMarker={(m) => {
+                if (m.type === "mandi") setSelectedMandiId(m.id);
+              }}
+              language={language}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Mandi Cards List */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className={`lg:col-span-2 space-y-4 ${mobileView === "map" ? "hidden md:block" : "block"}`}>
           {displayMandis.map((mandi, idx) => {
             const calc = calculateNet(mandi, mandi.modalPrice);
             const isSelected = activeMandi?.id === mandi.id;
@@ -659,6 +775,45 @@ export default function MarketPricesPage() {
           </Card>
         </div>
       </div>
+
+      {/* Dynamic 3-in-1 Location Picker Modal */}
+      <LocationPickerModal
+        isOpen={isLocationPickerModalOpen}
+        onClose={() => setIsLocationPickerModalOpen(false)}
+        initialLocation={{
+          lat: farmerLat,
+          lng: farmerLng,
+          district: farmLocation?.district || "Parbhani",
+          state: farmLocation?.state || "Maharashtra",
+          village: farmLocation?.village,
+          taluka: farmLocation?.taluka || "Parbhani",
+        }}
+        language={language as "mr" | "hi" | "en"}
+        onSelectLocation={(loc: SelectedLocationData) => {
+          const locLabel = loc.label || (loc.village
+            ? `${loc.village}, ${loc.district || ""}`
+            : `${loc.district || "Farm"}, ${loc.state || ""}`);
+          setFarmLocation({
+            id: loc.id || `farm-loc-${Date.now()}`,
+            lat: loc.lat,
+            lng: loc.lng,
+            label: locLabel,
+            district: loc.district || "",
+            state: loc.state || "",
+            village: loc.village,
+            taluka: loc.taluka,
+            pincode: loc.pincode,
+            accuracy: "High (GPS)",
+            updatedAt: new Date().toISOString(),
+          });
+          setIsLocationPickerModalOpen(false);
+          toast.success(
+            isMr
+              ? `स्थान अद्यतन केले: ${locLabel}`
+              : `Farm location updated to ${locLabel}`
+          );
+        }}
+      />
 
       {/* Location Selector Modal */}
       <LocationSelectorModal
