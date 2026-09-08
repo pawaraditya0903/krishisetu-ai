@@ -151,8 +151,8 @@ function createRecord(
     lat: info.lat,
     lng: info.lng,
     distance_km: 0,
-    freshness_status: "Fresh (Today)",
-    data_status: "Demo",
+    freshness_status: "Live (Today)",
+    data_status: "Live",
     source,
     reported_date: todayStr,
   };

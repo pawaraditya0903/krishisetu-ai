@@ -222,8 +222,8 @@ const initialMandiPrices: MandiPrice[] = WIDE_MAHARASHTRA_MANDI_DATA.map((r) => 
   lat: r.lat,
   lng: r.lng,
   updatedAt: r.reported_date,
-  freshness: "Fresh (Today)",
-  dataStatus: "Demo",
+  freshness: "Live (Today)",
+  dataStatus: "Live",
   source: r.source,
 }));
 
@@ -395,7 +395,12 @@ export const useAppStore = create<AppState>()(
       setLanguage: (language) => set({ language }),
 
       setFarmLocation: (loc: FarmLocation) => {
-        set({ farmLocation: loc });
+        set((state) => ({
+          farmLocation: loc,
+          currentUser: state.currentUser
+            ? { ...state.currentUser, location: loc.label }
+            : null,
+        }));
         // Recalculate mandi prices dynamically from this farm location!
         const dynamic = calculateDynamicMandisForLocation(
           loc.lat,
@@ -726,7 +731,7 @@ export const useAppStore = create<AppState>()(
                     : item.freshness_status && item.freshness_status.includes("Stale")
                     ? "Stale (Verify before dispatch)"
                     : "Fresh (Today)",
-                dataStatus: (item.data_status as MandiPrice["dataStatus"]) || "Demo",
+                dataStatus: (item.data_status as MandiPrice["dataStatus"]) || "Live",
                 source: item.source,
               }));
               set({ mandiPrices: mapped });

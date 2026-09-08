@@ -100,7 +100,7 @@ export interface MandiPrice {
   lng?: number;
   travelTimeHours?: number;
   updatedAt: string;
-  freshness: "Fresh (Today)" | "Recent (Yesterday)" | "Stale (Verify before dispatch)";
+  freshness: "Live (Today)" | "Fresh (Today)" | "Recent (Yesterday)" | "Stale (Verify before dispatch)";
   dataStatus?: "Live" | "Cached" | "Stale" | "Demo";
   source: string;
 }

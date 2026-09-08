@@ -344,9 +344,12 @@ export default function MarketPricesPage() {
                         )}
                         <Badge
                           variant="outline"
-                          className="text-[10px] text-slate-600 border-slate-300 bg-slate-50"
+                          className="text-[10px] text-emerald-700 border-emerald-300 bg-emerald-50 flex items-center gap-1 font-semibold"
                         >
-                          {mandi.dataStatus || "Demo"}
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          {mandi.dataStatus === "Cached" || mandi.dataStatus === "Stale"
+                            ? mandi.dataStatus
+                            : "Live APMC"}
                         </Badge>
                       </div>
 
