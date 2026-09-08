@@ -70,9 +70,25 @@ export interface CropLot {
   analysis?: QualityAnalysisResult;
 }
 
+export interface FarmLocation {
+  id: string;
+  label: string;
+  village?: string;
+  taluka?: string;
+  district: string;
+  state: string;
+  pincode?: string;
+  lat: number;
+  lng: number;
+  accuracy: "High (GPS)" | "Medium (Pincode)" | "Manual (Taluka/District)";
+  updatedAt: string;
+}
+
 export interface MandiPrice {
   id: string;
   mandi: string;
+  district?: string;
+  state?: string;
   crop: string;
   variety: string;
   minPrice: number;
@@ -80,9 +96,48 @@ export interface MandiPrice {
   maxPrice: number;
   arrivalsQtl: number;
   distanceKm: number;
+  lat?: number;
+  lng?: number;
+  travelTimeHours?: number;
   updatedAt: string;
   freshness: "Fresh (Today)" | "Recent (Yesterday)" | "Stale (Verify before dispatch)";
+  dataStatus?: "Live" | "Cached" | "Stale" | "Demo";
   source: string;
+}
+
+export interface ChatActionCard {
+  id: string;
+  type:
+    | "JOIN_POOL"
+    | "CHANGE_LOCATION"
+    | "SUBMIT_LOT"
+    | "VIEW_MANDI"
+    | "ACCEPT_OFFER"
+    | "CREATE_DISPATCH"
+    | "RAISE_DISPUTE";
+  title: string;
+  description: string;
+  payload: Record<string, unknown>;
+  confirmText: string;
+  cancelText: string;
+  status: "pending" | "confirmed" | "cancelled";
+}
+
+export interface AssistantMessage {
+  id: string;
+  sender: "user" | "bot";
+  text: string;
+  timestamp: string;
+  language?: "mr" | "hi" | "en";
+  actionCard?: ChatActionCard;
+  dataStatus?: "Live" | "Cached" | "Stale" | "Demo";
+  source?: string;
+  marketDataRef?: {
+    mandi: string;
+    modalPrice: number;
+    distanceKm: number;
+    date: string;
+  };
 }
 
 export type PoolStatus =

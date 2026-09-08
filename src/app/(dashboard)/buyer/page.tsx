@@ -35,12 +35,12 @@ export default function BuyerMarketplacePage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">B2B Wholesale Marketplace</h1>
           <p className="text-slate-500 text-sm">
-            Procure verified aggregated lots from Baramati &amp; Pune FPO clusters with regulated payment protection.
+            Procure verified aggregated lots from Maharashtra &amp; Indian agricultural clusters with regulated payment protection.
           </p>
         </div>
         <div className="flex gap-2">
           <select className="border border-slate-300 rounded-lg text-xs p-2 bg-white">
-            <option>All Crops (Tomato)</option>
+            <option>All Crops (Tomato, Cotton, Soyabean, Onion, etc.)</option>
           </select>
           <select className="border border-slate-300 rounded-lg text-xs p-2 bg-white">
             <option>All Grades (Grade A/B)</option>

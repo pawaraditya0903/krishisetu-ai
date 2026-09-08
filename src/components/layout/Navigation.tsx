@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -24,16 +24,59 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import { translations, Language } from "@/lib/i18n";
-import VoiceAssistantModal from "./VoiceAssistantModal";
+import { syncPendingActions } from "@/lib/offline-queue";
+import { toast } from "sonner";
+import WhatsAppVoiceAssistant from "./WhatsAppVoiceAssistant";
 
 export default function Navigation({ children }: { children: React.ReactNode }) {
-  const { currentUser, isOffline, setOffline, logout, language, setLanguage } = useAppStore();
+  const {
+    currentUser,
+    farmLocation,
+    isOffline,
+    setOffline,
+    logout,
+    language,
+    setLanguage,
+  } = useAppStore();
   const router = useRouter();
   const pathname = usePathname();
-  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 
   const t = translations[language] || translations.en;
+
+  // Auto-detect online/offline browser connectivity
+  useEffect(() => {
+    const handleOnline = async () => {
+      setOffline(false);
+      try {
+        const syncedResult = await syncPendingActions();
+        if (syncedResult && syncedResult.synced > 0) {
+          toast.success(
+            language === "mr"
+              ? `इंटरनेट पूर्ववत झाले. ${syncedResult.synced} ऑफलाइन बदल समक्रमित झाले.`
+              : `Internet restored. ${syncedResult.synced} queued actions synced.`
+          );
+        }
+      } catch {}
+    };
+
+    const handleOffline = () => {
+      setOffline(true);
+      toast.info(
+        language === "mr"
+          ? "आपण ऑफलाइन आहात. बदल स्थानिक मेमरीमध्ये जतन केले जातील."
+          : "You are offline. Drafts and local lots will save safely on device."
+      );
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [setOffline, language]);
 
   if (!currentUser) {
     return <div className="p-8 text-center text-slate-500">Redirecting to login...</div>;
@@ -177,10 +220,14 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsVoiceOpen(true)}
-              className="text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 text-xs"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("open-krishisetu-chat"));
+                }
+              }}
+              className="text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs"
             >
-              <Mic className="w-3.5 h-3.5 mr-1.5 text-amber-700" /> {t.nav.saleAdvisor ? (language === "mr" ? "आवाज" : language === "hi" ? "आवाज़" : "Voice") : "Voice"}
+              <Mic className="w-3.5 h-3.5 mr-1.5 text-emerald-700" /> {t.nav.saleAdvisor ? (language === "mr" ? "आवाज" : language === "hi" ? "आवाज़" : "Voice") : "Voice"}
             </Button>
 
             {/* Offline Toggle */}
@@ -208,13 +255,27 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6">
           {isOffline && (
-            <div className="mb-4 bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-lg flex items-start text-xs sm:text-sm">
+            <div className="mb-4 bg-amber-50 border border-amber-300 text-amber-900 p-4 rounded-xl flex items-start text-xs sm:text-sm shadow-xs">
               <WifiOff className="w-5 h-5 mr-3 shrink-0 text-amber-700 mt-0.5" />
-              <div>
-                <p className="font-semibold">{t.offlineNotice}</p>
-                <p className="text-xs text-amber-800 mt-0.5">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold">{t.offlineNotice}</p>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] py-0">
+                    Offline Mode
+                  </Badge>
+                </div>
+                <p className="text-xs text-amber-800">
                   {t.offlineNoticeSub}
                 </p>
+                <div className="pt-1 flex flex-wrap gap-2 text-[11px] text-amber-950 font-medium">
+                  {farmLocation && (
+                    <span>📍 {language === "mr" ? "शेवटचे जतन केलेले स्थान:" : "Last saved location:"} {farmLocation.label}</span>
+                  )}
+                  <span>•</span>
+                  <span>📊 {language === "mr" ? "कॅश केलेले बाजार दर उपलब्ध" : "Cached mandi rates available"}</span>
+                  <span>•</span>
+                  <span>🔒 {language === "mr" ? "थेट पेमेंट व खरेदीदार सौदे इंटरनेट आल्यावर सुरू होतील" : "Live buyer offers and payments pause until back online"}</span>
+                </div>
               </div>
             </div>
           )}
@@ -242,8 +303,8 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
         </div>
       </main>
 
-      {/* Voice Assistant Modal */}
-      <VoiceAssistantModal open={isVoiceOpen} onOpenChange={setIsVoiceOpen} />
+      {/* Real-time WhatsApp-Style Agricultural Assistant */}
+      <WhatsAppVoiceAssistant />
     </div>
   );
 }
