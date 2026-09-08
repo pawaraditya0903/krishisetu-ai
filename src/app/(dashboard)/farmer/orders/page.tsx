@@ -7,33 +7,36 @@ import { Button } from "@/components/ui/button";
 import { QrCode, CheckCircle2, Truck, FileText, ArrowRight, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { translations } from "@/lib/i18n";
 
 export default function FarmerOrdersPage() {
-  const { lots, currentUser, pools } = useAppStore();
+  const { lots, currentUser, pools, language } = useAppStore();
+  const t = translations[language] || translations.en;
 
   const myLots = lots.filter((l) => l.farmerId === currentUser?.id);
 
   const getStatusBadge = (status: string) => {
+    const label = t.orders.statuses[status] || status;
     switch (status) {
       case "Draft":
-        return <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-300">Draft</Badge>;
+        return <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-300">{label}</Badge>;
       case "Submitted":
-        return <Badge className="bg-blue-100 text-blue-800 border-none">Awaiting FPO Check</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-none">{label}</Badge>;
       case "Verified":
-        return <Badge className="bg-green-100 text-green-800 border-none">FPO Verified</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-none">{label}</Badge>;
       case "Pooled":
-        return <Badge className="bg-purple-100 text-purple-800 border-none">Pooled for Dispatch</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 border-none">{label}</Badge>;
       case "Reserved":
-        return <Badge className="bg-amber-100 text-amber-800 border-none">Buyer Reserved</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 border-none">{label}</Badge>;
       case "Dispatched":
-        return <Badge className="bg-indigo-100 text-indigo-800 border-none">In Transit</Badge>;
+        return <Badge className="bg-indigo-100 text-indigo-800 border-none">{label}</Badge>;
       case "Delivered":
-        return <Badge className="bg-cyan-100 text-cyan-800 border-none">Delivered to Buyer</Badge>;
+        return <Badge className="bg-cyan-100 text-cyan-800 border-none">{label}</Badge>;
       case "Accepted":
       case "Paid":
-        return <Badge className="bg-emerald-100 text-emerald-800 border-none">Settled &amp; Paid</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-800 border-none">{label}</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
     }
   };
 
@@ -41,14 +44,12 @@ export default function FarmerOrdersPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">My Crop Lots &amp; Orders</h1>
-          <p className="text-slate-500 text-sm">
-            Track lot progress from AI quality grading to FPO pooling and payment release.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">{t.orders.title}</h1>
+          <p className="text-slate-500 text-sm">{t.orders.subtitle}</p>
         </div>
         <Link href="/farmer/grade">
           <Button className="bg-green-700 hover:bg-green-800">
-            Create New Lot
+            {t.orders.createNewLot}
           </Button>
         </Link>
       </div>
@@ -59,12 +60,10 @@ export default function FarmerOrdersPage() {
             <div className="mx-auto w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-700">
               <FileText className="w-6 h-6" />
             </div>
-            <h3 className="font-semibold text-slate-800">No crop lots submitted yet</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Start by taking photos of your tomato harvest to generate an external quality estimate and digital gate pass.
-            </p>
+            <h3 className="font-semibold text-slate-800">{t.orders.noLotsFound}</h3>
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">{t.orders.noLotsDesc}</p>
             <Link href="/farmer/grade">
-              <Button className="bg-green-700 hover:bg-green-800 mt-2">Start Selling</Button>
+              <Button className="bg-green-700 hover:bg-green-800 mt-2">{t.farmer.startSelling}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -82,8 +81,8 @@ export default function FarmerOrdersPage() {
                         {getStatusBadge(lot.status)}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
-                        <span>Lot ID: <strong className="font-mono text-slate-700">{lot.id}</strong></span>
-                        <span>Date: {new Date(lot.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                        <span>{t.orders.lotId}: <strong className="font-mono text-slate-700">{lot.id}</strong></span>
+                        <span>{new Date(lot.createdAt).toLocaleDateString()}</span>
                         <span>Hub: Baramati FPO Yard</span>
                       </div>
                     </div>
@@ -97,12 +96,12 @@ export default function FarmerOrdersPage() {
                         })}
                         className="text-xs"
                       >
-                        <QrCode className="w-3.5 h-3.5 mr-1.5" /> Show Gate QR
+                        <QrCode className="w-3.5 h-3.5 mr-1.5" /> {t.orders.qrPass}
                       </Button>
                       {lot.status === "Paid" && (
                         <Link href="/farmer/settlement">
                           <Button size="sm" className="bg-green-700 hover:bg-green-800 text-xs">
-                            View Receipt
+                            {t.orders.viewSettlement}
                           </Button>
                         </Link>
                       )}
@@ -126,15 +125,15 @@ export default function FarmerOrdersPage() {
                       </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs text-slate-500 mb-0.5">External AI Grade</div>
+                      <div className="text-xs text-slate-500 mb-0.5">{t.farmer.cropGrade}</div>
                       <div className="font-bold text-green-700">{lot.grade}</div>
-                      <div className="text-[10px] text-slate-500">{lot.confidenceScore ? `${lot.confidenceScore}% confidence` : "Visual estimate"}</div>
+                      <div className="text-[10px] text-slate-500">{lot.confidenceScore ? `${lot.confidenceScore}% confidence` : t.farmer.externalAIEstimate}</div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs text-slate-500 mb-0.5">Pool Linkage</div>
+                      <div className="text-xs text-slate-500 mb-0.5">{t.orders.assignedPool}</div>
                       <div className="font-bold text-slate-800">{lot.poolId ? lot.poolId : "Not Pooled"}</div>
                       <div className="text-[10px] text-purple-700">
-                        {associatedPool ? `${associatedPool.destinationMandi}` : "Eligible to join"}
+                        {associatedPool ? `${associatedPool.destinationMandi}` : t.orders.readyForPooling}
                       </div>
                     </div>
                   </div>

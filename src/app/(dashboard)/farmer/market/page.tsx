@@ -21,17 +21,29 @@ export default function MarketPricesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getMandiDisplayName = (mandiName: string) => {
-    if (language !== "mr") return mandiName;
-    if (mandiName.includes("Baramati")) return "बारामती बाजार समिती";
-    if (mandiName.includes("Pune Gultekdi")) return "पुणे गुलटेकडी मार्केट यार्ड";
-    if (mandiName.includes("Solapur")) return "सोलापूर बाजार समिती";
-    if (mandiName.includes("Mumbai Vashi")) return "मुंबई वाशी एपीएमसी";
-    if (mandiName.includes("Lasalgaon")) return "लासलगाव कांदा बाजार";
-    if (mandiName.includes("Nashik")) return "नाशिक कृषी उत्पन्न बाजार समिती";
-    if (mandiName.includes("Kolhapur")) return "कोल्हापूर बाजार समिती";
-    if (mandiName.includes("Ahmednagar")) return "अहमदनगर बाजार समिती";
-    if (mandiName.includes("Sangli")) return "सांगली हळद व शेतीमाल बाजार";
-    if (mandiName.includes("Nagpur")) return "नागपूर कॉटन मार्केट यार्ड";
+    if (language === "mr") {
+      if (mandiName.includes("Baramati")) return "बारामती बाजार समिती";
+      if (mandiName.includes("Pune Gultekdi")) return "पुणे गुलटेकडी मार्केट यार्ड";
+      if (mandiName.includes("Solapur")) return "सोलापूर बाजार समिती";
+      if (mandiName.includes("Mumbai Vashi")) return "मुंबई वाशी एपीएमसी";
+      if (mandiName.includes("Lasalgaon")) return "लासलगाव कांदा बाजार";
+      if (mandiName.includes("Nashik")) return "नाशिक कृषी उत्पन्न बाजार समिती";
+      if (mandiName.includes("Kolhapur")) return "कोल्हापूर बाजार समिती";
+      if (mandiName.includes("Ahmednagar")) return "अहमदनगर बाजार समिती";
+      if (mandiName.includes("Sangli")) return "सांगली हळद व शेतीमाल बाजार";
+      if (mandiName.includes("Nagpur")) return "नागपूर कॉटन मार्केट यार्ड";
+    } else if (language === "hi") {
+      if (mandiName.includes("Baramati")) return "बारामती मंडी";
+      if (mandiName.includes("Pune Gultekdi")) return "पुणे गुलटेकडी मार्केट यार्ड";
+      if (mandiName.includes("Solapur")) return "सोलापुर मंडी";
+      if (mandiName.includes("Mumbai Vashi")) return "मुंबई वाशी एपीएमसी";
+      if (mandiName.includes("Lasalgaon")) return "लासलगांव प्याज मंडी";
+      if (mandiName.includes("Nashik")) return "नासिक मंडी";
+      if (mandiName.includes("Kolhapur")) return "कोल्हापुर मंडी";
+      if (mandiName.includes("Ahmednagar")) return "अहमदनगर मंडी";
+      if (mandiName.includes("Sangli")) return "सांगली मंडी";
+      if (mandiName.includes("Nagpur")) return "नागपुर कॉटन मार्केट यार्ड";
+    }
     return mandiName;
   };
 

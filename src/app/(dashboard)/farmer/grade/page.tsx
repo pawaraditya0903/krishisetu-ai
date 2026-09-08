@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, CheckCircle2, AlertTriangle, Loader2, ArrowRight, ShieldCheck, Sparkles, RefreshCw } from "lucide-react";
+import { Camera, AlertTriangle, Loader2, ArrowRight, ShieldCheck, Sparkles, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
@@ -23,33 +23,48 @@ interface PhotoSlot {
   defaultPreview: string;
 }
 
-const PHOTO_SLOTS: PhotoSlot[] = [
-  {
-    key: "top",
-    title: "1. Top View",
-    subtitle: "Size & Uniformity",
-    description: "Inspects diameter uniformity, shoulder color & calyx health",
-    defaultPreview: "/demo/tomato-top.jpg",
+const CROP_FALLBACKS: Record<string, { size: string; ripeness: string; color: string; blemish: string }> = {
+  Tomato: {
+    size: "93% uniform within 55-65mm commercial diameter",
+    ripeness: "Breaker-to-pink firm stage (Ideal table transport)",
+    color: "91% Uniform Red-Orange",
+    blemish: "Minor visible surface blemishes on 1.8% sample (< 5% tolerance for Grade A)",
   },
-  {
-    key: "side",
-    title: "2. Side View",
-    subtitle: "Ripeness & Firmness",
-    description: "Evaluates skin texture, firmness & breaker color stage",
-    defaultPreview: "/demo/tomato-side.jpg",
+  Onion: {
+    size: "91% uniform within 45-60mm medium-large bulb diameter",
+    ripeness: "Well-cured dry neck and firm bulb structure",
+    color: "89% Uniform Pink-Red Tunic",
+    blemish: "Minor outer skin peelings on 2.1% sample (< 4% tolerance for Grade A)",
   },
-  {
-    key: "crate",
-    title: "3. Bulk Crate View",
-    subtitle: "Harvest Occupancy",
-    description: "Evaluates harvest occupancy, surface defects & crate framing",
-    defaultPreview: "/demo/tomato-crate.jpg",
+  Potato: {
+    size: "89% uniform within 40-55mm commercial size",
+    ripeness: "Firm mature skin, zero solanine or greening",
+    color: "92% Uniform Golden Cream",
+    blemish: "Minor superficial soil marks on 1.5% sample (< 3% tolerance for Grade A)",
   },
-];
+  Pomegranate: {
+    size: "94% uniform within 75-85mm export grade diameter",
+    ripeness: "Glossy deep-red crown, mature aril density",
+    color: "95% Bhagwa Ruby Red",
+    blemish: "Minor thrips surface marks on 1.2% sample (< 2% tolerance for Grade A)",
+  },
+  "Green Chilli": {
+    size: "92% uniform 8-10cm pod length with intact pedicel",
+    ripeness: "Crisp turgid pod texture, fresh green calyx",
+    color: "93% Dark Glossy Green",
+    blemish: "Minor pinhead blemishes on 1.4% sample (< 2% tolerance for Grade A)",
+  },
+  Soyabean: {
+    size: "95% uniform round seed count, ~11-12% moisture index",
+    ripeness: "Fully matured, clean seed coat with no pod splits",
+    color: "94% Bright Golden Yellow",
+    blemish: "Minor broken seeds on 1.1% sample (< 2% tolerance for Grade A)",
+  },
+};
 
 export default function GradeCropPage() {
   const router = useRouter();
-  const { currentUser, addLot, isOffline, language } = useAppStore();
+  const { currentUser, addLot, language } = useAppStore();
   const t = translations[language] || translations.en;
   const [step, setStep] = useState(1);
   const [analyzing, setAnalyzing] = useState(false);
@@ -83,6 +98,30 @@ export default function GradeCropPage() {
 
   const [hasUserUploaded, setHasUserUploaded] = useState(false);
   const [gradeResult, setGradeResult] = useState<QualityAnalysisResult | null>(null);
+
+  const photoSlots: PhotoSlot[] = [
+    {
+      key: "top",
+      title: t.grade.topTitle,
+      subtitle: t.grade.topSub,
+      description: t.grade.topDesc,
+      defaultPreview: "/demo/tomato-top.jpg",
+    },
+    {
+      key: "side",
+      title: t.grade.sideTitle,
+      subtitle: t.grade.sideSub,
+      description: t.grade.sideDesc,
+      defaultPreview: "/demo/tomato-side.jpg",
+    },
+    {
+      key: "crate",
+      title: t.grade.crateTitle,
+      subtitle: t.grade.crateSub,
+      description: t.grade.crateDesc,
+      defaultPreview: "/demo/tomato-crate.jpg",
+    },
+  ];
 
   // Handle file selection from camera or desktop file picker
   const handleFileChange = (key: "top" | "side" | "crate", file: File) => {
@@ -164,7 +203,7 @@ export default function GradeCropPage() {
 
     const t2 = setTimeout(() => {
       setProgress(70);
-      setAnalysisStatus("Evaluating YOLO11 segmentation & defect detection...");
+      setAnalysisStatus(`Evaluating ${formData.crop} defect detection & size distribution...`);
     }, 1800);
 
     // Identify primary image file to upload
@@ -209,27 +248,32 @@ export default function GradeCropPage() {
     setProgress(100);
     setAnalyzing(false);
 
+    const cropConfig = CROP_FALLBACKS[formData.crop] || CROP_FALLBACKS.Tomato;
+    const isQualityGood = metrics.blurVariance >= 100 && metrics.brightness >= 80 && metrics.brightness <= 200 && metrics.occupancy >= 55;
+    const estimatedGrade = isQualityGood ? "Grade A" : "Grade B";
+    const externalScore = isQualityGood ? 88 : 72;
+    const confidencePct = isQualityGood ? 92 : 74;
+
     const fallbackResult: QualityAnalysisResult = {
       blurScore: metrics.blurVariance,
-      blurPassed: metrics.blurVariance > 100,
+      blurPassed: metrics.blurVariance >= 100,
       brightnessScore: metrics.brightness,
       brightnessPassed: metrics.brightness >= 80 && metrics.brightness <= 200,
       occupancyScore: metrics.occupancy,
       occupancyPassed: metrics.occupancy >= 55,
       pHash: "9a2f7c81b0e35d12",
-      externalScore: 88,
-      estimatedGrade: "Grade A",
-      confidence: "High",
-      confidencePct: 92,
-      detectedIssues: ["Minor sunscald on 1.8% sample (< 5% tolerance for Grade A)"],
+      externalScore,
+      estimatedGrade,
+      confidence: isQualityGood ? "High" : "Medium",
+      confidencePct,
+      detectedIssues: [cropConfig.blemish],
       parameters: {
-        sizeUniformity: "93% uniform within 55-65mm diameter",
-        ripenessIndex: "Breaker-to-pink firm stage (Ideal table transport)",
-        surfaceDefectsPct: 1.8,
-        colorScore: "91% Uniform Red-Orange",
+        sizeUniformity: cropConfig.size,
+        ripenessIndex: cropConfig.ripeness,
+        surfaceDefectsPct: isQualityGood ? 1.8 : 4.2,
+        colorScore: cropConfig.color,
       },
-      disclaimer:
-        "External visual-quality estimate only. Internal moisture, pesticide residue, and sweetness (Brix) are not measurable from photos and require physical FPO verification.",
+      disclaimer: `External visual-quality estimate for ${formData.crop}. Internal moisture, pesticide residue, and sweetness (Brix) are not measurable from photos and require physical FPO verification.`,
       modelTimestamp: new Date().toISOString(),
       isMockInference: !primaryFile,
     };
@@ -241,7 +285,7 @@ export default function GradeCropPage() {
   const handleSave = (status: "Draft" | "Submitted") => {
     if (!currentUser) return;
 
-    const lotId = `LOT-TOM-${Math.floor(1000 + Math.random() * 9000)}`;
+    const lotId = `LOT-${formData.crop.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const lotImages = [
       uploadedPhotos.top.previewUrl,
       uploadedPhotos.side.previewUrl,
@@ -279,83 +323,56 @@ export default function GradeCropPage() {
       })
       .catch(() => {});
 
-    if (isOffline) {
-      toast.info("Offline: Lot Saved to Local Queue", {
-        description: "Your crop lot and photo metadata will sync automatically once network connectivity is restored.",
-      });
-    } else {
-      toast.success(status === "Draft" ? "Draft Saved" : "Sent to FPO for Verification", {
-        description:
-          status === "Draft"
-            ? "Your crop details and uploaded photos are safely saved."
-            : "Saksham FPO manager has been notified to verify your lot.",
-      });
-    }
-
+    toast.success(status === "Draft" ? "Draft Saved" : "Lot Submitted for FPO Verification", {
+      description: `Lot ${lotId} has been added to your account.`,
+    });
     router.push("/farmer/orders");
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="mb-4">
+      {/* Header */}
+      <div>
         <h1 className="text-2xl font-bold text-slate-900">{t.grade.title}</h1>
-        <p className="text-slate-500 text-sm">
-          {t.grade.subtitle}
-        </p>
+        <p className="text-slate-500 text-sm">{t.grade.subtitle}</p>
       </div>
 
       {/* Stepper Progress */}
-      <div className="flex items-center justify-between mb-8">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-colors ${
-                step >= i
-                  ? "bg-green-700 border-green-700 text-white"
-                  : "bg-white border-slate-300 text-slate-400"
-              }`}
-            >
-              {i}
-            </div>
-            {i < 3 && (
-              <div
-                className={`h-1 flex-1 mx-2 rounded-full transition-colors ${
-                  step > i ? "bg-green-700" : "bg-slate-200"
-                }`}
-              />
-            )}
-          </div>
-        ))}
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-2">
+        <span className={step >= 1 ? "text-green-700 font-bold" : ""}>{t.grade.step1}</span>
+        <span className={step >= 2 ? "text-green-700 font-bold" : ""}>{t.grade.step2}</span>
+        <span className={step >= 3 ? "text-green-700 font-bold" : ""}>{t.grade.step3}</span>
       </div>
+      <Progress value={step === 1 ? 33 : step === 2 ? 66 : 100} className="h-1.5" />
 
       {/* Step 1: Crop & Volume Info */}
       {step === 1 && (
         <Card className="border-slate-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">{t.grade.step1}</CardTitle>
-            <CardDescription className="text-xs">Specify the crop variety and estimated volume to sell.</CardDescription>
+            <CardDescription className="text-xs">{t.grade.specifyInfo}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Crop</Label>
+                <Label className="text-xs">{t.grade.cropType}</Label>
                 <Select
                   value={formData.crop}
                   onValueChange={(v) => setFormData({ ...formData, crop: v || "Tomato" })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Tomato">Tomato (टोमॅटो)</SelectItem>
-                    <SelectItem value="Onion">Onion (कांदा)</SelectItem>
-                    <SelectItem value="Potato">Potato (बटाटा)</SelectItem>
-                    <SelectItem value="Pomegranate">Pomegranate (डाळिंब)</SelectItem>
-                    <SelectItem value="Green Chilli">Green Chilli (हिरवी मिरची)</SelectItem>
-                    <SelectItem value="Soyabean">Soyabean (सोयाबीन)</SelectItem>
+                    <SelectItem value="Tomato">Tomato ({t.market.crops.Tomato || "टोमॅटो"})</SelectItem>
+                    <SelectItem value="Onion">Onion ({t.market.crops.Onion || "कांदा"})</SelectItem>
+                    <SelectItem value="Potato">Potato ({t.market.crops.Potato || "बटाटा"})</SelectItem>
+                    <SelectItem value="Pomegranate">Pomegranate ({t.market.crops.Pomegranate || "डाळिंब"})</SelectItem>
+                    <SelectItem value="Green Chilli">Green Chilli ({t.market.crops["Green Chilli"] || "हिरवी मिरची"})</SelectItem>
+                    <SelectItem value="Soyabean">Soyabean ({t.market.crops.Soyabean || "सोयाबीन"})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Variety</Label>
+                <Label className="text-xs">{t.grade.variety}</Label>
                 <Select
                   value={formData.variety}
                   onValueChange={(v) => setFormData({ ...formData, variety: v || "Abhinav (Hybrid)" })}
@@ -372,7 +389,7 @@ export default function GradeCropPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Estimated Harvest Weight (kg)</Label>
+                <Label className="text-xs">{t.grade.harvestWeight}</Label>
                 <Input
                   type="number"
                   value={formData.quantity}
@@ -380,7 +397,7 @@ export default function GradeCropPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Harvest Date</Label>
+                <Label className="text-xs">{t.grade.harvestDate}</Label>
                 <Input
                   type="date"
                   value={formData.harvestDate}
@@ -390,7 +407,7 @@ export default function GradeCropPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Preferred FPO Collection Center</Label>
+              <Label className="text-xs">{t.grade.collectionCenter}</Label>
               <Input
                 value={formData.collectionHub}
                 onChange={(e) => setFormData({ ...formData, collectionHub: e.target.value })}
@@ -399,7 +416,7 @@ export default function GradeCropPage() {
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button onClick={() => setStep(2)} className="bg-green-700 hover:bg-green-800 text-xs">
-              {language === "mr" ? "पुढे: फोटो काढा" : language === "hi" ? "आगे: फोटो लें" : "Next: Capture Photos"} <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              {t.grade.nextPhotos} <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Button>
           </CardFooter>
         </Card>
@@ -411,13 +428,13 @@ export default function GradeCropPage() {
           <CardHeader>
             <CardTitle className="text-lg">{t.grade.step2}</CardTitle>
             <CardDescription className="text-xs">
-              Take photos using your phone camera or upload JPEG/PNG files. Each angle tests specific OpenCV quality criteria.
+              {t.grade.step1Desc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* 3 Interactive Photo Upload Slots */}
             <div className="grid sm:grid-cols-3 gap-3">
-              {PHOTO_SLOTS.map((slot) => {
+              {photoSlots.map((slot) => {
                 const photoState = uploadedPhotos[slot.key];
                 return (
                   <div
@@ -449,18 +466,18 @@ export default function GradeCropPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
                       {photoState.isRealUpload && (
-                        <div className="absolute top-2 right-2 bg-emerald-600 text-white rounded-full p-1 shadow-md">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        <div className="absolute top-2 right-2 bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                          <ShieldCheck className="w-3 h-3" /> Real Photo
                         </div>
                       )}
 
-                      <div className="absolute bottom-2 left-2 right-2 text-left text-white pointer-events-none">
-                        <div className="text-xs font-bold">{slot.title}</div>
-                        <div className="text-[10px] text-slate-300 truncate">{slot.subtitle}</div>
+                      <div className="absolute bottom-2 left-2 right-2 text-left text-white">
+                        <div className="font-bold text-xs leading-tight">{slot.title}</div>
+                        <div className="text-[10px] text-slate-300">{slot.subtitle}</div>
                       </div>
                     </div>
 
-                    <p className="text-[10px] text-slate-500 mb-2.5 flex-1 line-clamp-2">
+                    <p className="text-[11px] text-slate-500 mb-3 line-clamp-2 px-1">
                       {slot.description}
                     </p>
 
@@ -469,15 +486,15 @@ export default function GradeCropPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => fileInputRefs[slot.key].current?.click()}
-                      className="w-full text-xs h-7 border-slate-300 hover:border-green-600 hover:text-green-700 gap-1"
+                      className="w-full text-xs font-semibold hover:bg-green-50 hover:text-green-700 hover:border-green-300"
                     >
                       {photoState.isRealUpload ? (
                         <>
-                          <RefreshCw className="w-3 h-3" /> Change
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-green-700" /> {t.grade.replacePhoto}
                         </>
                       ) : (
                         <>
-                          <Camera className="w-3 h-3" /> Take / Upload
+                          <Camera className="w-3.5 h-3.5 mr-1.5 text-slate-600" /> {t.grade.tapToUpload}
                         </>
                       )}
                     </Button>
@@ -486,43 +503,35 @@ export default function GradeCropPage() {
               })}
             </div>
 
-            {hasUserUploaded && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-2.5 rounded-lg text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>
-                  Real device photo loaded! Will stream actual JPEG bytes to the backend OpenCV analyzer.
-                </span>
-              </div>
-            )}
-
-            {/* Quality Checklist */}
-            <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-lg text-xs space-y-1.5 text-slate-700">
-              <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-green-700" />
-                OpenCV Image-Quality Gate Requirements:
-              </div>
-              <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-slate-600">
-                <li>Laplacian variance &gt; 100 (Rejects blurred or out-of-focus camera shots)</li>
-                <li>Brightness 80–200 (Rejects underexposed shadows or direct camera glare)</li>
-                <li>Fruit occupancy &gt; 55% of frame (Rejects empty or distant backgrounds)</li>
-              </ul>
+            {/* Upload status hint banner */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-green-700" />
+                {hasUserUploaded
+                  ? t.grade.realPhotoLoaded
+                  : "Using high-res demo reference captures. Tap buttons above to load real photos."}
+              </span>
+              <span className="text-[11px] font-mono text-slate-500">
+                {hasUserUploaded ? "Mode: Live Upload" : "Mode: Pilot Dataset"}
+              </span>
             </div>
 
+            {/* Analysis Progress */}
             {analyzing && (
-              <div className="space-y-2 pt-3 border-t border-slate-100">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-green-700 flex items-center gap-1.5">
+              <div className="space-y-2 py-2">
+                <div className="flex justify-between text-xs font-medium text-slate-600">
+                  <span className="flex items-center gap-1.5 text-green-700">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> {analysisStatus}
                   </span>
-                  <span className="text-slate-700">{progress}%</span>
+                  <span>{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-2 bg-slate-100" />
+                <Progress value={progress} className="h-2" />
               </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" size="sm" onClick={() => setStep(1)} disabled={analyzing} className="text-xs">
-              Back
+              {t.grade.back}
             </Button>
             <Button
               onClick={handleRunAnalysis}
@@ -549,14 +558,14 @@ export default function GradeCropPage() {
           <Card className="border-green-300 shadow-md overflow-hidden">
             <div className="bg-green-800 text-white p-6 text-center">
               <span className="text-xs font-semibold uppercase tracking-wider bg-green-700/60 px-3 py-1 rounded-full text-green-100 inline-block mb-2">
-                {language === "mr" ? "AI दृश्य गुणवत्ता प्रतवारी" : "AI Visual Quality Classification"}
+                {t.grade.aiQualityClassification}
               </span>
               <h2 className="text-4xl font-extrabold mb-1">{gradeResult.estimatedGrade}</h2>
               <p className="text-sm text-green-100">
-                {language === "mr" ? "एकूण गुणवत्ता गुण:" : "Overall Quality Score:"} <strong>{gradeResult.externalScore}/100</strong> ({gradeResult.confidence} Confidence • {gradeResult.confidencePct}%)
+                {language === "mr" ? "एकूण गुणवत्ता गुण:" : language === "hi" ? "कुल गुणवत्ता स्कोर:" : "Overall Quality Score:"} <strong>{gradeResult.externalScore}/100</strong> ({gradeResult.confidence} {t.grade.confidence} • {gradeResult.confidencePct}%)
               </p>
               <div className="mt-2 text-[11px] text-green-200">
-                Inference Source: {gradeResult.isMockInference ? "HTML5 Canvas Offline Engine" : "FastAPI 0.115+ OpenCV Server Gateway"}
+                Inference: {gradeResult.isMockInference ? t.grade.canvasAnalysis : t.grade.onlineAnalysis}
               </div>
             </div>
 
@@ -564,10 +573,10 @@ export default function GradeCropPage() {
               {/* Photo Thumbnails */}
               <div>
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  {language === "mr" ? "अपलोड केलेले फोटो" : "Uploaded Harvest Images"}
+                  {t.grade.uploadedImages}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {PHOTO_SLOTS.map((slot) => (
+                  {photoSlots.map((slot) => (
                     <div key={slot.key} className="aspect-square rounded-lg overflow-hidden bg-slate-900 border border-slate-200 relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -597,38 +606,38 @@ export default function GradeCropPage() {
               {/* OpenCV Quality Gate Telemetry */}
               <div>
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  OpenCV Image Quality Pre-Flight Gate Telemetry
+                  {t.grade.opencvGateTitle}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Blur Variance</span>
+                    <span className="text-[10px] text-slate-500 block">{t.grade.blurVariance}</span>
                     <strong className="font-semibold text-slate-800">
                       {gradeResult.blurScore?.toFixed(1) ?? "142.5"}
                     </strong>
                     <span className="text-[9px] text-green-600 block mt-0.5">
-                      {gradeResult.blurPassed ? "Passed (> 100)" : "Blurred"}
+                      {gradeResult.blurPassed ? `${t.grade.passStatus} (> 100)` : t.grade.failStatus}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Exposure Score</span>
+                    <span className="text-[10px] text-slate-500 block">{t.grade.exposureScore}</span>
                     <strong className="font-semibold text-slate-800">
                       {gradeResult.brightnessScore?.toFixed(1) ?? "128.4"}
                     </strong>
                     <span className="text-[9px] text-green-600 block mt-0.5">
-                      {gradeResult.brightnessPassed ? "In Range (80-200)" : "Adjust lighting"}
+                      {gradeResult.brightnessPassed ? `${t.grade.passStatus} (80-200)` : t.grade.failStatus}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Crate Framing</span>
+                    <span className="text-[10px] text-slate-500 block">{t.grade.crateFraming}</span>
                     <strong className="font-semibold text-slate-800">
                       {gradeResult.occupancyScore}%
                     </strong>
                     <span className="text-[9px] text-green-600 block mt-0.5">
-                      {gradeResult.occupancyPassed ? "Framed (> 55%)" : "Low framing"}
+                      {gradeResult.occupancyPassed ? `${t.grade.passStatus} (> 55%)` : t.grade.failStatus}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Gate Status</span>
+                    <span className="text-[10px] text-slate-500 block">{t.grade.gateStatus}</span>
                     <strong className="font-semibold text-green-700 flex items-center justify-center gap-1 mt-1">
                       <ShieldCheck className="w-3.5 h-3.5" /> {gradeResult.isMockInference ? "Canvas Mode" : "OpenCV Passed"}
                     </strong>
@@ -639,23 +648,23 @@ export default function GradeCropPage() {
               {/* Individual Parameters Breakdown */}
               <div className="space-y-3">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Visual Parameters Evaluated
+                  {t.grade.visualParamsTitle}
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Diameter / Caliber</span>
+                    <span className="text-slate-400 block text-[10px]">{t.grade.diameterLabel}</span>
                     <strong className="text-slate-800">{gradeResult.parameters.sizeUniformity}</strong>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Calyx &amp; Surface Defect Rate</span>
+                    <span className="text-slate-400 block text-[10px]">{t.grade.defectLabel}</span>
                     <strong className="text-slate-800">{gradeResult.parameters.surfaceDefectsPct}%</strong>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Ripeness / Firmness</span>
+                    <span className="text-slate-400 block text-[10px]">{t.grade.ripenessLabel}</span>
                     <strong className="text-slate-800">{gradeResult.parameters.ripenessIndex}</strong>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Color Uniformity</span>
+                    <span className="text-slate-400 block text-[10px]">{t.grade.colorLabel}</span>
                     <strong className="text-slate-800">{gradeResult.parameters.colorScore}</strong>
                   </div>
                 </div>
@@ -673,7 +682,7 @@ export default function GradeCropPage() {
 
             <CardFooter className="bg-slate-50 p-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2.5">
               <Button variant="outline" className="w-full text-xs" onClick={() => handleSave("Draft")}>
-                {language === "mr" ? "ड्राफ्ट जतन करा" : language === "hi" ? "ड्राफ्ट सहेजें" : "Save as Draft"}
+                {t.actions.saveDraft}
               </Button>
               <Button
                 className="w-full bg-green-700 hover:bg-green-800 text-xs"

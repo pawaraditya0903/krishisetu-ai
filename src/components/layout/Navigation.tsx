@@ -87,14 +87,14 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
           <div>
             <span className="font-bold text-lg text-slate-800 tracking-tight">{t.appName}</span>
             <div className="text-[10px] text-green-700 font-semibold tracking-wider uppercase">
-              FPO &amp; Market Linkage
+              {t.nav.fpoTagline}
             </div>
           </div>
         </div>
 
         <div className="p-3 flex flex-col gap-1 flex-1 overflow-y-auto">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1 mt-2">
-            Navigation
+            {t.nav.navigationLabel}
           </div>
           {links.map((link) => {
             const Icon = link.icon;
@@ -151,7 +151,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
                 📍 {currentUser.location}
               </span>
             )}
-            <span className="text-xs text-slate-400">| Pilot: Baramati Tomato Cluster</span>
+            <span className="text-xs text-slate-400">| {t.nav.pilotCluster}</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -180,7 +180,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
               onClick={() => setIsVoiceOpen(true)}
               className="text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 text-xs"
             >
-              <Mic className="w-3.5 h-3.5 mr-1.5 text-amber-700" /> Voice
+              <Mic className="w-3.5 h-3.5 mr-1.5 text-amber-700" /> {t.nav.saleAdvisor ? (language === "mr" ? "आवाज" : language === "hi" ? "आवाज़" : "Voice") : "Voice"}
             </Button>
 
             {/* Offline Toggle */}
@@ -212,7 +212,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
               <div>
                 <p className="font-semibold">{t.offlineNotice}</p>
                 <p className="text-xs text-amber-800 mt-0.5">
-                  Simulated local storage queue is active. You can create lots and join pools; they will synchronize when connection is restored.
+                  {t.offlineNoticeSub}
                 </p>
               </div>
             </div>

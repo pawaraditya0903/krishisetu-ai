@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Truck, Clock, CheckCircle2, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { translations } from "@/lib/i18n";
 
 export default function PoolingPage() {
-  const { pools, lots, joinPool, currentUser } = useAppStore();
+  const { pools, lots, joinPool, currentUser, language } = useAppStore();
+  const t = translations[language] || translations.en;
 
   // Find verified lots belonging to current user that are not yet pooled
   const currentUserLots = lots.filter(
@@ -23,13 +25,13 @@ export default function PoolingPage() {
 
   const handleJoin = (poolId: string) => {
     if (!selectedLot) {
-      toast.error("Please select a verified lot to join the pool.");
+      toast.error(language === "mr" ? "कृपया पूलमध्ये सामील होण्यासाठी पडताळलेला लॉट निवडा." : language === "hi" ? "कृपया पूल में शामिल होने के लिए एक सत्यापित लॉट चुनें।" : "Please select a verified lot to join the pool.");
       return;
     }
     joinPool(selectedLot.id, poolId);
     setJoined(true);
-    toast.success("Joined FPO Pool Successfully!", {
-      description: `Your ${selectedLot.quantityKg} kg Tomato lot has been allocated to Pool ${poolId}.`,
+    toast.success(t.pooling.joinedStatus, {
+      description: `${selectedLot.quantityKg} kg ${selectedLot.crop} -> Pool ${poolId}`,
     });
     setTimeout(() => setJoined(false), 4000);
   };
@@ -37,9 +39,9 @@ export default function PoolingPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">FPO Group Pooling</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t.pooling.title}</h1>
         <p className="text-slate-500 text-sm">
-          Pool your verified harvest with other farmers to unlock bulk freight savings (up to 30%) and access wholesale institutional buyers.
+          {t.pooling.subtitle}
         </p>
       </div>
 
@@ -47,7 +49,7 @@ export default function PoolingPage() {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">
-              Select Your Verified Lot to Pool:
+              {t.pooling.selectLot}
             </div>
             <select
               className="border border-slate-300 rounded-lg text-xs p-2.5 w-full sm:w-80 bg-slate-50 font-medium"
@@ -62,19 +64,19 @@ export default function PoolingPage() {
             </select>
           </div>
           <Badge className="bg-green-100 text-green-800 border-none text-xs h-fit px-3 py-1">
-            Eligible for FPO Freight Discount
+            {t.pooling.poolSavingsBadge}
           </Badge>
         </div>
       ) : (
         <div className="bg-slate-50 p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-500 text-xs sm:text-sm">
-          You don&apos;t have any verified lots available for pooling right now. Complete crop grading and FPO verification first.
+          {t.pooling.noLotsToPool}
         </div>
       )}
 
       {joined && (
         <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-center text-xs sm:text-sm shadow-xs">
           <CheckCircle2 className="w-5 h-5 mr-2.5 text-green-600 shrink-0" />
-          <span>Successfully joined the FPO pool! Your shared transport discount is locked in.</span>
+          <span>{t.pooling.joinedStatus}</span>
         </div>
       )}
 
@@ -103,9 +105,11 @@ export default function PoolingPage() {
                         {pool.allowedGrades.join(" / ")}
                       </Badge>
                       {progressPct >= 100 ? (
-                        <Badge className="bg-red-100 text-red-800 border-none text-[10px]">Full</Badge>
+                        <Badge className="bg-red-100 text-red-800 border-none text-[10px]">{t.pooling.poolFull}</Badge>
                       ) : (
-                        <Badge className="bg-green-100 text-green-800 border-none text-[10px]">Filling Fast</Badge>
+                        <Badge className="bg-green-100 text-green-800 border-none text-[10px]">
+                          {language === "mr" ? "पूल भरत आहे" : language === "hi" ? "तेजी से भर रहा है" : "Filling Fast"}
+                        </Badge>
                       )}
                     </div>
 
@@ -116,28 +120,30 @@ export default function PoolingPage() {
 
                     <div className="text-xs text-slate-500 flex flex-wrap items-center gap-4 mt-3">
                       <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-slate-400" /> {(pool.contributions || []).length + 3} Farmers Participating
+                        <Users className="w-4 h-4 text-slate-400" /> {(pool.contributions || []).length + 3} {language === "mr" ? "शेतकरी सहभागी" : language === "hi" ? "किसान शामिल" : "Farmers Participating"}
                       </span>
                       <span className="flex items-center gap-1 text-green-700 font-semibold bg-green-50 px-2 py-0.5 rounded">
-                        <Truck className="w-4 h-4" /> -{pool.sharedFreightSavingsPct}% Shared Freight
+                        <Truck className="w-4 h-4" /> -{pool.sharedFreightSavingsPct}% {t.pooling.poolSavingsBadge}
                       </span>
                     </div>
                   </div>
 
                   <div className="md:text-right flex flex-col md:items-end justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
-                    <div className="text-xs text-slate-500 mb-1">Pool Capacity</div>
+                    <div className="text-xs text-slate-500 mb-1">{t.pooling.targetProgress}</div>
                     <div className="text-2xl font-extrabold text-slate-900">
                       {pool.currentKg} <span className="text-xs font-normal text-slate-500">/ {pool.targetKg} kg</span>
                     </div>
                     <div className="text-xs text-amber-700 flex items-center gap-1 mt-1.5 font-medium">
-                      <Clock className="w-3.5 h-3.5" /> Closes in 4 hours
+                      <Clock className="w-3.5 h-3.5" /> {language === "mr" ? "४ तासांत बंद होईल" : language === "hi" ? "4 घंटे में बंद होगा" : "Closes in 4 hours"}
                     </div>
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex justify-between items-center text-xs">
                 <div className="text-slate-600">
-                  <span className="font-semibold text-slate-800">Target Buyer Rate:</span>{" "}
+                  <span className="font-semibold text-slate-800">
+                    {language === "mr" ? "खरेदीदार अपेक्षित दर:" : language === "hi" ? "अनुमानित खरीदार भाव:" : "Target Buyer Rate:"}
+                  </span>{" "}
                   <strong className="text-green-700 text-sm">₹{pool.pricePerQtl}/qtl</strong>
                 </div>
                 <Button
@@ -145,7 +151,7 @@ export default function PoolingPage() {
                   disabled={!selectedLot || progressPct >= 100}
                   className="bg-green-700 hover:bg-green-800 text-xs"
                 >
-                  Join This Pool ({selectedLot ? `${selectedLot.quantityKg} kg` : "Select Lot"})
+                  {t.pooling.joinPoolButton} ({selectedLot ? `${selectedLot.quantityKg} kg` : "Select Lot"})
                 </Button>
               </CardFooter>
             </Card>
@@ -157,25 +163,25 @@ export default function PoolingPage() {
       {selectedLot && (
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-xs">
           <h4 className="font-bold text-blue-950 text-sm mb-1">
-            Individual Settlement Estimation for {selectedLot.id} ({selectedLot.quantityKg} kg)
+            {language === "mr" ? "निवडलेल्या लॉटसाठी नफा अंदाज" : language === "hi" ? "चयनित लॉट के लिए शुद्ध आय अनुमान" : "Individual Settlement Estimation"}: {selectedLot.id} ({selectedLot.quantityKg} kg)
           </h4>
           <p className="text-xs text-blue-800 mb-4 leading-relaxed">
-            By joining this shared FPO dispatch to Pune Market Yard, your per-kg freight drops from ₹1.25/kg to ₹0.85/kg:
+            {t.pooling.savingsDesc} (₹1.25/kg &rarr; ₹0.85/kg):
           </p>
           <div className="bg-white p-4 rounded-lg border border-blue-100 text-xs grid grid-cols-2 gap-y-2">
-            <div className="text-slate-500">Gross Harvest Value ({selectedLot.quantityKg} kg @ ₹2,050/qtl):</div>
+            <div className="text-slate-500">{t.market.grossValue} ({selectedLot.quantityKg} kg @ ₹2,050/qtl):</div>
             <div className="font-medium text-right text-slate-800">
               ₹{Math.round((selectedLot.quantityKg / 100) * 2050).toLocaleString()}
             </div>
-            <div className="text-slate-500">Shared Group Freight (28.5% Discount):</div>
+            <div className="text-slate-500">{t.settlement.freightDeduction} (28.5%):</div>
             <div className="font-medium text-right text-red-600">
               -₹{Math.round(selectedLot.quantityKg * 0.85).toLocaleString()}
             </div>
-            <div className="text-slate-500">FPO Operational Fee (1.5%):</div>
+            <div className="text-slate-500">{t.settlement.handlingDeduction} (1.5%):</div>
             <div className="font-medium text-right text-red-600">
               -₹{Math.round((selectedLot.quantityKg / 100) * 2050 * 0.015).toLocaleString()}
             </div>
-            <div className="text-slate-700 font-bold pt-2 border-t mt-1">Estimated Net Realization:</div>
+            <div className="text-slate-700 font-bold pt-2 border-t mt-1">{t.market.takeHome}:</div>
             <div className="text-green-700 font-bold text-right pt-2 border-t mt-1 text-sm">
               ₹{Math.round((selectedLot.quantityKg / 100) * 2050 - selectedLot.quantityKg * 0.85 - (selectedLot.quantityKg / 100) * 2050 * 0.015).toLocaleString()}
             </div>
