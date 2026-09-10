@@ -19,6 +19,7 @@ import {
   FleetVehicle,
   PlatformSettings,
   RolePermissions,
+  CropAddRequest,
 } from "./types";
 import { Language } from "./i18n";
 import { queueOfflineAction } from "./offline-queue";
@@ -72,6 +73,16 @@ interface AppState {
   updateActionCardStatus: (cardId: string, status: "confirmed" | "cancelled") => void;
   clearChat: () => void;
   deleteConversation: () => void;
+
+  cropRequests: CropAddRequest[];
+  addProduct: (lot: CropLot) => void;
+  updateProduct: (id: string, updates: Partial<CropLot>) => void;
+  deleteDraftProduct: (id: string) => { success: boolean; message?: string };
+  withdrawProduct: (id: string) => { success: boolean; message?: string };
+  archiveProduct: (id: string) => void;
+  publishProduct: (id: string) => { success: boolean; message?: string };
+  unpublishProduct: (id: string) => void;
+  submitCropRequest: (req: Omit<CropAddRequest, "id" | "createdAt">) => CropAddRequest;
 
   addLot: (lot: CropLot) => void;
   updateLotStatus: (
@@ -447,6 +458,7 @@ export const useAppStore = create<AppState>()(
       transporters: initialTransporters,
       platformSettings: initialPlatformSettings,
       rolePermissions: initialRolePermissions,
+      cropRequests: [],
 
       login: (user, token) => {
         const userWithToken = { ...user, accessToken: token || user.accessToken };
@@ -523,6 +535,202 @@ export const useAppStore = create<AppState>()(
 
       clearChat: () => set({ chatMessages: [] }),
       deleteConversation: () => set({ chatMessages: [] }),
+
+      addProduct: (lot: CropLot) => {
+        const { isOffline, addAuditEvent } = get();
+        if (isOffline) {
+          queueOfflineAction("CREATE_LOT", lot);
+        }
+        set((state) => ({ lots: [lot, ...state.lots] }));
+        addAuditEvent(
+          "CREATE_PRODUCT",
+          "FARMER_PRODUCT",
+          lot.id,
+          `Created product ${lot.id} for ${lot.quantityKg} ${lot.unit || "kg"} ${lot.crop} (${lot.variety || "Standard"})`
+        );
+      },
+
+      updateProduct: (id: string, updates: Partial<CropLot>) => {
+        const { addAuditEvent } = get();
+        set((state) => ({
+          lots: state.lots.map((l) =>
+            l.id === id ? { ...l, ...updates, updatedAt: new Date().toISOString() } : l
+          ),
+        }));
+        addAuditEvent("UPDATE_PRODUCT", "FARMER_PRODUCT", id, `Updated product details`);
+      },
+
+      deleteDraftProduct: (id: string) => {
+        const lot = get().lots.find((l) => l.id === id);
+        if (!lot) return { success: false, message: "Product not found." };
+
+        const allowedDeleteStatuses = ["DRAFT", "PHOTOS_UPLOADED", "UNDER_ANALYSIS", "NEEDS_REUPLOAD", "Draft"];
+        const currentStatus = lot.productStatus || lot.status;
+        if (
+          !allowedDeleteStatuses.includes(currentStatus) ||
+          lot.marketplaceVisibility === "PUBLIC" ||
+          lot.poolId ||
+          lot.buyerId ||
+          ["Pooled", "Reserved", "Dispatched", "Delivered", "Accepted", "Paid"].includes(lot.status)
+        ) {
+          return {
+            success: false,
+            message:
+              "Permanent deletion is allowed only for unpublished drafts. This product has been submitted, published, pooled, or is linked to transactions. Please use 'Withdraw from Marketplace' or 'Archive Product' instead.",
+          };
+        }
+
+        set((state) => ({
+          lots: state.lots.filter((l) => l.id !== id),
+        }));
+        get().addAuditEvent(
+          "PRODUCT_DRAFT_DELETED",
+          "FARMER_PRODUCT",
+          id,
+          `Draft product ${id} safely removed.`
+        );
+        return { success: true };
+      },
+
+      withdrawProduct: (id: string) => {
+        const lot = get().lots.find((l) => l.id === id);
+        if (!lot) return { success: false, message: "Product not found." };
+
+        if (
+          ["BUYER_RESERVED", "DISPATCHED", "DELIVERED", "SOLD"].includes(lot.productStatus || "") ||
+          lot.buyerId ||
+          ["Reserved", "Dispatched", "Delivered", "Accepted", "Paid"].includes(lot.status)
+        ) {
+          return {
+            success: false,
+            message:
+              "This product is linked to an active/completed transaction and cannot be deleted or withdrawn directly. You can view transaction details or contact FPO support.",
+          };
+        }
+
+        if (lot.poolId) {
+          const pool = get().pools.find((p) => p.id === lot.poolId);
+          if (pool && ["Dispatched", "Delivered"].includes(pool.status)) {
+            return {
+              success: false,
+              message: "Cannot withdraw: the pool is already dispatched or in transit. Please contact FPO manager.",
+            };
+          }
+          if (pool) {
+            set((state) => ({
+              pools: state.pools.map((p) =>
+                p.id === pool.id
+                  ? { ...p, currentKg: Math.max(0, p.currentKg - lot.quantityKg) }
+                  : p
+              ),
+            }));
+          }
+        }
+
+        set((state) => ({
+          lots: state.lots.map((l) =>
+            l.id === id
+              ? {
+                  ...l,
+                  productStatus: "WITHDRAWN",
+                  marketplaceVisibility: "PRIVATE",
+                  poolId: undefined,
+                  updatedAt: new Date().toISOString(),
+                }
+              : l
+          ),
+        }));
+        get().addAuditEvent(
+          "PRODUCT_WITHDRAWN_MARKETPLACE",
+          "FARMER_PRODUCT",
+          id,
+          `Product ${id} withdrawn from marketplace.`
+        );
+        return { success: true };
+      },
+
+      archiveProduct: (id: string) => {
+        set((state) => ({
+          lots: state.lots.map((l) =>
+            l.id === id
+              ? {
+                  ...l,
+                  productStatus: "ARCHIVED",
+                  marketplaceVisibility: "PRIVATE",
+                  archivedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
+              : l
+          ),
+        }));
+        get().addAuditEvent("PRODUCT_ARCHIVED", "FARMER_PRODUCT", id, `Product ${id} archived.`);
+      },
+
+      publishProduct: (id: string) => {
+        const lot = get().lots.find((l) => l.id === id);
+        if (!lot) return { success: false, message: "Product not found." };
+        if (["DELETED", "ARCHIVED"].includes(lot.productStatus || "")) {
+          return { success: false, message: "Archived or deleted products cannot be published directly." };
+        }
+
+        set((state) => ({
+          lots: state.lots.map((l) =>
+            l.id === id
+              ? {
+                  ...l,
+                  productStatus: "PUBLISHED",
+                  marketplaceVisibility: "PUBLIC",
+                  updatedAt: new Date().toISOString(),
+                }
+              : l
+          ),
+        }));
+        get().addAuditEvent(
+          "PRODUCT_PUBLISHED_MARKETPLACE",
+          "FARMER_PRODUCT",
+          id,
+          `Product ${id} published to Buyer Marketplace.`
+        );
+        return { success: true };
+      },
+
+      unpublishProduct: (id: string) => {
+        set((state) => ({
+          lots: state.lots.map((l) =>
+            l.id === id
+              ? {
+                  ...l,
+                  productStatus: "UNPUBLISHED",
+                  marketplaceVisibility: "PRIVATE",
+                  updatedAt: new Date().toISOString(),
+                }
+              : l
+          ),
+        }));
+        get().addAuditEvent(
+          "PRODUCT_UNPUBLISHED",
+          "FARMER_PRODUCT",
+          id,
+          `Product ${id} unpublished by farmer.`
+        );
+      },
+
+      submitCropRequest: (reqData) => {
+        const newReq: CropAddRequest = {
+          id: `CRQ-${Math.floor(1000 + Math.random() * 9000)}`,
+          ...reqData,
+          status: "PENDING_REVIEW",
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({ cropRequests: [newReq, ...state.cropRequests] }));
+        get().addAuditEvent(
+          "CROP_REQUEST_SUBMITTED",
+          "CROP_REQUEST",
+          newReq.id,
+          `Requested crop ${newReq.requestedCropName} for catalog inclusion.`
+        );
+        return newReq;
+      },
 
       addLot: (lot) => {
         const { isOffline, addAuditEvent } = get();
@@ -1453,3 +1661,5 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+export const useStore = useAppStore;

@@ -200,6 +200,215 @@ export const apiClient = {
         body: JSON.stringify(data),
       });
     },
+
+    getCatalog: async () => {
+      return request<
+        Array<{
+          id: string;
+          name: string;
+          marathi_name?: string;
+          hindi_name?: string;
+          category: string;
+          icon: string;
+          unit: string;
+          perishability: string;
+          storage_recommendation?: string;
+          default_batch_size_kg: number;
+          supported_quality_params?: string[];
+          varieties: string[];
+          status: string;
+        }>
+      >("/crops/catalog");
+    },
+
+    searchCatalog: async (query: string) => {
+      return request<
+        Array<{
+          id: string;
+          name: string;
+          marathi_name?: string;
+          hindi_name?: string;
+          category: string;
+          icon: string;
+          unit: string;
+          perishability: string;
+          storage_recommendation?: string;
+          default_batch_size_kg: number;
+          supported_quality_params?: string[];
+          varieties: string[];
+          status: string;
+        }>
+      >(`/crops/catalog/search?q=${encodeURIComponent(query)}`);
+    },
+
+    submitRequest: async (data: {
+      requested_crop_name: string;
+      variety?: string;
+      category?: string;
+      reason?: string;
+    }) => {
+      return request<{
+        id: string;
+        requested_crop_name: string;
+        status: string;
+      }>("/crops/requests", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+
+    createRequest: async (data: {
+      farmerId?: string;
+      farmerName?: string;
+      requestedCropName?: string;
+      requested_crop_name?: string;
+      variety?: string;
+      category?: string;
+      reason?: string;
+    }) => {
+      return request<{
+        id: string;
+        requested_crop_name: string;
+        status: string;
+      }>("/crops/requests", {
+        method: "POST",
+        body: JSON.stringify({
+          requested_crop_name: data.requested_crop_name || data.requestedCropName,
+          variety: data.variety,
+          category: data.category,
+          reason: data.reason,
+        }),
+      });
+    },
+  },
+
+  // Farmer Products
+  products: {
+    uploadPhoto: async (
+      file: Blob | File,
+      category: string = "TOP_VIEW",
+      productId?: string,
+      cropId?: string
+    ) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", category);
+      if (productId) formData.append("product_id", productId);
+      if (cropId) formData.append("crop_id", cropId);
+
+      return request<{
+        id: string;
+        product_id?: string;
+        image_url: string;
+        storage_key: string;
+        category: string;
+        display_order: number;
+        uploaded_at: string;
+        file_type: string;
+        file_size: number;
+      }>("/products/upload-photo", {
+        method: "POST",
+        body: formData,
+      });
+    },
+
+    create: async (data: {
+      farmer_id?: string;
+      crop_id?: string;
+      crop_name: string;
+      variety: string;
+      quantity?: number;
+      quantity_kg?: number;
+      unit?: string;
+      harvest_date?: string;
+      packaging_type?: string;
+      location_id?: string;
+      location_name?: string;
+      notes?: string;
+      product_status?: string;
+      image_ids?: string[];
+      cover_image_id?: string;
+      cover_image_url?: string;
+      asking_price_per_qtl?: number;
+      asking_price_paise?: number;
+    }) => {
+      const payload = {
+        ...data,
+        quantity: data.quantity ?? data.quantity_kg ?? 500,
+        quantity_kg: data.quantity_kg ?? data.quantity ?? 500,
+      };
+      return request<any>("/products", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+
+    getMyProducts: async (params?: { status?: string; crop?: string; search?: string }) => {
+      let query = "";
+      const qp = new URLSearchParams();
+      if (params?.status && params.status !== "All") qp.append("status", params.status);
+      if (params?.crop && params.crop !== "All") qp.append("crop", params.crop);
+      if (params?.search) qp.append("search", params.search);
+      const str = qp.toString();
+      if (str) query = `?${str}`;
+      return request<any[]>(`/products/farmer/me${query}`);
+    },
+
+    getById: async (productId: string) => {
+      return request<any>(`/products/${productId}`);
+    },
+
+    update: async (productId: string, data: any) => {
+      return request<any>(`/products/${productId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+    },
+
+    publish: async (productId: string) => {
+      return request<any>(`/products/${productId}/publish`, {
+        method: "POST",
+      });
+    },
+
+    unpublish: async (productId: string) => {
+      return request<any>(`/products/${productId}/unpublish`, {
+        method: "POST",
+      });
+    },
+
+    withdraw: async (productId: string) => {
+      return request<any>(`/products/${productId}/withdraw`, {
+        method: "POST",
+      });
+    },
+
+    archive: async (productId: string) => {
+      return request<any>(`/products/${productId}/archive`, {
+        method: "POST",
+      });
+    },
+
+    deleteDraft: async (productId: string) => {
+      return request<{ status: string; message: string; product_id: string }>(
+        `/products/${productId}`,
+        {
+          method: "DELETE",
+        }
+      );
+    },
+  },
+
+  // Buyer Marketplace
+  marketplace: {
+    getProducts: async (params?: { crop?: string; grade?: string; location?: string }) => {
+      const qp = new URLSearchParams();
+      if (params?.crop && params.crop !== "All") qp.append("crop", params.crop);
+      if (params?.grade && params.grade !== "All") qp.append("grade", params.grade);
+      const str = qp.toString();
+      const query = str ? `?${str}` : "";
+      return request<any[]>(`/marketplace/products${query}`);
+    },
   },
 
   // Market intelligence & forecasts
