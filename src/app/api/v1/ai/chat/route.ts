@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
     const language: string = body.language || "mr-IN"; // "mr-IN" | "hi-IN" | "en-IN"
     const history: ChatMessage[] = body.history || [];
     const context: FarmerContext = body.context || {};
-    const clientApiKey: string | undefined = body.api_key;
 
     if (!message) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -67,11 +66,9 @@ export async function POST(request: NextRequest) {
     const isMr = language.startsWith("mr");
     const isHi = language.startsWith("hi");
 
-    const apiKey =
-      clientApiKey ||
-      process.env.GEMINI_API_KEY ||
-      process.env.GOOGLE_API_KEY ||
-      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    // Phase 2.1 Security Hardening: Never accept client-supplied API keys or NEXT_PUBLIC secrets.
+    // Use strictly server-side environment variables.
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
     // Check if the message represents an action intent that requires a Confirmation Card
     const actionCard = detectActionIntent(message, context, isMr, isHi);
