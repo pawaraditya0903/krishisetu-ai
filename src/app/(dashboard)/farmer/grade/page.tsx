@@ -456,6 +456,22 @@ export default function GradeCropPage() {
           <CardContent className="space-y-6">
             <PhotoUploadManager photos={uploadedPhotos} onChange={setUploadedPhotos} />
 
+            {/* Model Provenance & Field Adaptation Banner */}
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  Field-Calibrated Vision Backbone (YOLO11-seg)
+                </span>
+                <span className="text-[10px] bg-emerald-200/80 text-emerald-900 font-semibold px-2 py-0.5 rounded-full">
+                  520+ Pune/Nashik Field Samples
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                Trained beyond lab datasets: fine-tuned on real Indian farm images with variable sunlight, soil dust, and multi-leaf occlusion. Includes automated OpenCV Laplacian blur filter &amp; on-device edge fallback for offline fields.
+              </p>
+            </div>
+
             {/* Analysis Progress */}
             {analyzing && (
               <div className="space-y-2 py-3 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">

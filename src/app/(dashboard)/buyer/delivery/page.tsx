@@ -104,6 +104,36 @@ export default function BuyerDeliveryPage() {
               </div>
             </div>
 
+            {/* ONDC Logistics & Milestone Escrow Protocol Banner */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-lg flex items-start gap-2.5">
+                <Truck className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-blue-900">ONDC Protocol Ready Logistics</span>
+                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-semibold rounded">Beckn v1.2.0</span>
+                  </div>
+                  <p className="text-blue-700 text-[11px] mt-0.5">
+                    Carrier: <strong>Delhivery Rural Agri-Freight / Sahyadri Pool</strong> (BPP: <code>bpp.sahyadri.coop.ondc</code>).
+                    GPS-tracked perishable transit with time-window SLA.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-purple-50/60 border border-purple-200 rounded-lg flex items-start gap-2.5">
+                <CheckSquare className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-purple-900">Zero-Advance Nodal Escrow</span>
+                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-semibold rounded">RBI Compliant</span>
+                  </div>
+                  <p className="text-purple-700 text-[11px] mt-0.5">
+                    Stage 1 (Deposit: ₹0 advance) &rarr; Stage 2 (FPO Weigh-slip: 80%) &rarr; Stage 3 (Final Acceptance: 20%).
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {(pool.status === "Reserved" || pool.status === "Dispatched") && (
               <div className="border border-slate-200 rounded-xl p-6 text-center space-y-4 bg-slate-50/50">
                 <div className="mx-auto w-14 h-14 bg-green-50 text-green-700 rounded-full flex items-center justify-center">
