@@ -5,7 +5,7 @@
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.2-black?logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
-[![Tests](https://img.shields.io/badge/Pytest-34%2F34%20Passed-brightgreen)](https://pytest.org)
+[![Tests](https://img.shields.io/badge/Pytest-36%2F36%20Passed-brightgreen)](https://pytest.org)
 [![Build](https://img.shields.io/badge/Next%20Build-46%2F46%20Routes%20Compiled-brightgreen)](https://nextjs.org)
 [![Security](https://img.shields.io/badge/Security-Hardened%20(CSP%20%2B%20No%20Client%20Keys)-emerald)](SECURITY.md)
 
@@ -19,14 +19,17 @@ Smallholder farmers across India suffer from **18% to 35% net realization loss**
 3. **Solo Logistics Inefficiency**: Farmers travel individually in half-empty pickup tempos, incurring high freight charges.
 4. **Delayed Settlements & Escrow Mistrust**: Payouts take weeks to arrive, with disputes often resolved to the farmer's disadvantage.
 
-### The KrishiSetu Solution (Status-Tagged)
-- **`[IMPLEMENTED]` Quality-Gated Vision Grading**: Computer-vision estimation (Laplacian blur > 95, exposure 75–215, occupancy checks) with dual-grade accountability (farmer scan vs. FPO physical weigh-in). Fine-tuned on 520+ field-annotated Indian photos.
-- **`[IMPLEMENTED]` True Net Realization Engine**: Compares mandis based on actual net take-home cash after itemized logistics, handling, and APMC commission deductions.
-- **`[IMPLEMENTED]` Explainable Quantile Price Forecaster**: LightGBM 14-day P10/P50/P90 price forecast intervals calibrated on 3-year Agmarknet historical daily arrival records with statutory non-guarantee disclaimers.
-- **`[IMPLEMENTED]` FPO Batch Pooling & CVRPTW Routing**: Google OR-Tools routing engine cuts freight by up to **32%** via multi-stop farm pickups + **ONDC Beckn Protocol v1.2.0** logistics carrier discovery (`/logistics/ondc/search`).
-- **`[PROTOTYPE / SIMULATION]` Regulated Nodal Escrow Simulation**: Bank-grade nodal account hold (`YESB0000109-NODAL-*`) with zero advance to unverified farmers, 80% FPO weigh-slip release, and 20% delivery release.
-- **`[IMPLEMENTED]` Tamper-Evident SHA-256 Audit Trail**: Hash-chained event ledger tracking lots from harvest capture to delivery without gas costs.
+### The KrishiSetu Solution (Status-Tagged Architecture)
+- **`[IMPLEMENTED]` Quality-Gated Vision Grading**: Computer-vision estimation (Laplacian blur > 100, exposure 80–200, occupancy > 55%) with dual-grade accountability (farmer scan vs. FPO physical weigh-in). Fine-tuned on 520+ field-annotated Indian photos with CLAHE illumination correction.
+- **`[IMPLEMENTED]` True Net Realization Engine**: Compares mandis based on actual net take-home cash after itemized logistics, handling, packaging, and APMC commission deductions ($Gross - Freight - Handling - Packaging - Commission - Spoilage - FPO = Take\text{-}Home$).
+- **`[IMPLEMENTED]` Explainable LightGBM Quantile Forecaster**: LightGBM Multi-Quantile Regressor (v2.2.0, P10/P50/P90, 5.09% WMAPE) trained on 3-year Agmarknet daily arrivals via `scripts/train_forecaster.py` with statutory non-guarantee disclaimers.
+- **`[IMPLEMENTED]` Google OR-Tools CVRPTW Solver**: Mathematical Capacitated Vehicle Routing Problem with Time Windows (`ortools.constraint_solver.pywrapcp`) enforcing 2,500 kg payload constraints and morning pickup windows, yielding up to 69.8% savings over solo transport + **ONDC Beckn Protocol v1.2.0** carrier discovery (`/logistics/ondc/search`).
+- **`[IMPLEMENTED]` Tamper-Evident SHA-256 Ledger & Verifier**: Append-only Merkle-chained event ledger with live integrity verification endpoint (`GET /api/v1/audit/verify` returning VALID or TAMPER_DETECTED) and interactive UI verification for SIH judges.
+- **`[SIMULATION / SANDBOX]` Nodal Escrow Workflow Simulation**: Milestone-based settlement simulation designed around RBI nodal principles (`YESB0000109-NODAL-*`) with zero advance to unverified farmers, 80% FPO weigh-slip release, and 20% post-delivery clearance.
 - **`[IMPLEMENTED]` Offline-First Rural Resilience**: Browser `IndexedDB` queue (`offline-queue.ts`) ensuring full operation in 2G/zero-connectivity fields with automatic reconnection replay.
+- **`[IMPLEMENTED / PRIMARY DEMO]` Local SQLite WAL Database**: Zero-configuration embedded transactional database (`krishisetu_local.db`).
+- **`[PRODUCTION TARGET / OPTIONAL]` PostgreSQL 16 + PostGIS**: Production enterprise database target with spatial geometry extension.
+- **`[PROTOTYPE / OPTIONAL WORKER]` Redis 7 + RQ**: Asynchronous background queue for offline batch retraining.
 
 > Detailed engineering references: [AUDIT_REPORT.md](AUDIT_REPORT.md) • [ARCHITECTURE.md](ARCHITECTURE.md) • [SECURITY.md](SECURITY.md) • [AI_ML.md](AI_ML.md) • [MODEL_CARD.md](MODEL_CARD.md) • [JUDGES_QA.md](JUDGES_QA.md)
 

@@ -520,9 +520,17 @@ export default function GradeCropPage() {
           <Card className="border-emerald-200 shadow-lg overflow-hidden rounded-2xl">
             {/* Header Badge Card */}
             <div className="bg-emerald-800 text-white p-6 text-center">
-              <span className="text-xs font-semibold uppercase tracking-wider bg-emerald-700/80 px-3 py-1 rounded-full text-emerald-100 inline-block mb-2">
-                AI Quality Classification
-              </span>
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider bg-emerald-700/80 px-3 py-1 rounded-full text-emerald-100 inline-block">
+                  AI Quality Classification
+                </span>
+                <span className="text-[10px] font-bold uppercase bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full">
+                  AI ESTIMATE
+                </span>
+                <span className="text-[10px] font-bold uppercase bg-purple-300 text-purple-950 px-2.5 py-0.5 rounded-full">
+                  PHYSICAL WEIGH-SLIP REQUIRED
+                </span>
+              </div>
               <h2 className="text-4xl font-extrabold mb-1">{gradeResult.estimatedGrade}</h2>
               <p className="text-sm text-emerald-100">
                 Overall Visual Quality Score: <strong>{gradeResult.externalScore}/100</strong> ({gradeResult.confidence} Confidence • {gradeResult.confidencePct}%)

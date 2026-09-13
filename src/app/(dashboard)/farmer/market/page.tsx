@@ -452,6 +452,96 @@ export default function MarketPricesPage() {
         </Card>
       </div>
 
+      {/* Net Realization Engine: Full Waterfall Breakdown */}
+      {activeMandi && (
+        <Card className="border-emerald-300 bg-gradient-to-r from-emerald-50/80 via-white to-emerald-50/50 shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 pb-3 border-b border-emerald-100">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-emerald-800 text-white text-[10px] uppercase font-bold tracking-wider">
+                    {isMr ? "थेट निव्वळ प्राप्ती इंजिन" : "Net Realization Engine"}
+                  </Badge>
+                  <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[10px]">
+                    DEMO DATA: Agmarknet Bulletin
+                  </Badge>
+                  <span className="text-xs font-bold text-slate-800">
+                    {activeMandi.mandi} ({activeMandi.distanceKm} km from Hub)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-1">
+                  {isMr
+                    ? "मालाची अंतिम विक्री प्राप्ती = ठोक बाजार भाव − वाहतूक − हमाली − पॅकेजिंग − बाजार समिती उपकर − नुकसान बफर − शेतकरी कंपनी शुल्क"
+                    : "Final Take-Home = Gross Mandi Clearance − Freight − Yard Handling − Packaging − APMC Cess − Spoilage Buffer − FPO Service Fee"}
+                </p>
+              </div>
+              <div className="text-right sm:self-center">
+                <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                  {isMr ? "अंतिम खात्यात जमा" : "Final Net Take-Home"}
+                </span>
+                <span className="text-2xl font-black text-emerald-800">
+                  ₹{Math.round(selectedCalc.netPerQtl)}/qtl
+                </span>
+                <span className="text-[10px] text-emerald-700 block font-medium">
+                  (₹{Math.round(selectedCalc.netTotal)} for {quantityKg} kg)
+                </span>
+              </div>
+            </div>
+
+            {/* Horizontal Waterfall Pipeline Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center text-xs">
+              <div className="bg-white p-2.5 rounded-lg border border-emerald-300 shadow-2xs">
+                <span className="text-[10px] text-emerald-700 block font-bold">1. Gross Modal</span>
+                <span className="text-sm font-extrabold text-emerald-950">₹{activeMandi.modalPrice}</span>
+                <span className="text-[9px] text-slate-500 block">per quintal</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-600 block font-bold">2. Freight</span>
+                <span className="text-sm font-extrabold text-rose-700">-₹{Math.round(selectedCalc.freight / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">{activeMandi.distanceKm} km</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-600 block font-bold">3. Handling</span>
+                <span className="text-sm font-extrabold text-rose-700">-₹{Math.round(handlingFee / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">Staging/weigh</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-600 block font-bold">4. Packaging</span>
+                <span className="text-sm font-extrabold text-rose-700">-₹{Math.round(packagingFee / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">CFB crates</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-600 block font-bold">5. APMC Cess</span>
+                <span className="text-sm font-extrabold text-rose-700">-₹{Math.round(selectedCalc.commission / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">{commissionPct}% cess</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-600 block font-bold">6. Spoilage</span>
+                <span className="text-sm font-extrabold text-rose-700">-₹{Math.round(selectedCalc.spoilageLoss / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">{spoilagePct}% shrinkage</span>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-amber-200 shadow-2xs">
+                <span className="text-[10px] text-amber-700 block font-bold">7. FPO Fee</span>
+                <span className="text-sm font-extrabold text-amber-800">-₹{Math.round(selectedCalc.fpoFee / (quantityKg / 100))}</span>
+                <span className="text-[9px] text-slate-500 block">{fpoFeePct}% service</span>
+              </div>
+
+              <div className="bg-emerald-900 text-white p-2.5 rounded-lg shadow-sm">
+                <span className="text-[10px] text-emerald-200 block font-bold">8. Take-Home</span>
+                <span className="text-sm font-black text-emerald-300">₹{Math.round(selectedCalc.netPerQtl)}</span>
+                <span className="text-[9px] text-emerald-100 block font-mono">₹{Math.round(selectedCalc.netTotal)} net</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Mandi Cards List */}
         <div className={`lg:col-span-2 space-y-4 ${mobileView === "map" ? "hidden md:block" : "block"}`}>
