@@ -101,6 +101,8 @@ def seed_database():
             actor_name="Saksham FPO Manager",
             actor_role="FPO_MANAGER"
         )
+        ts_val = audit_event["timestamp"]
+        ts_dt = datetime.fromisoformat(ts_val) if isinstance(ts_val, str) else ts_val
         db_audit = AuditEvent(
             id=audit_event["id"],
             actor_name=audit_event["actor_name"],
@@ -110,7 +112,8 @@ def seed_database():
             entity_id=audit_event["entity_id"],
             details=audit_event["details"],
             prev_hash=audit_event["prev_hash"],
-            hash=audit_event["hash"]
+            hash=audit_event["hash"],
+            timestamp=ts_dt
         )
         db.add(db_audit)
 

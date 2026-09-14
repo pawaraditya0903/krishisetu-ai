@@ -410,10 +410,23 @@ def submit_crop_request(
 
 # ==================== PRODUCT PHOTOS UPLOAD & STORAGE ====================
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+REPO_ROOT = os.path.dirname(BACKEND_DIR)
+
+UPLOAD_DIR = os.path.join(BACKEND_DIR, "uploads")
 PRODUCTS_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "products")
 os.makedirs(PRODUCTS_UPLOAD_DIR, exist_ok=True)
-FRONTEND_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "krishisetu-ai", "public", "uploads", "products")
+
+# Find frontend public/uploads directory reliably
+if os.path.isdir(os.path.join(BACKEND_DIR, "public")):
+    FRONTEND_UPLOADS_DIR = os.path.join(BACKEND_DIR, "public", "uploads", "products")
+elif os.path.isdir(os.path.join(REPO_ROOT, "public")):
+    FRONTEND_UPLOADS_DIR = os.path.join(REPO_ROOT, "public", "uploads", "products")
+elif os.path.isdir(os.path.join(REPO_ROOT, "krishisetu-ai", "public")):
+    FRONTEND_UPLOADS_DIR = os.path.join(REPO_ROOT, "krishisetu-ai", "public", "uploads", "products")
+else:
+    FRONTEND_UPLOADS_DIR = PRODUCTS_UPLOAD_DIR
+
 try:
     os.makedirs(FRONTEND_UPLOADS_DIR, exist_ok=True)
 except Exception:
@@ -1548,7 +1561,7 @@ def verify_audit_ledger(db: Session = Depends(get_db)):
     event_dicts = [
         {
             "id": e.id,
-            "timestamp": e.timestamp,
+            "timestamp": str(e.timestamp),
             "actor_name": e.actor_name,
             "actor_role": e.actor_role,
             "action": e.action,
@@ -1580,7 +1593,7 @@ def simulate_ledger_tamper_test(db: Session = Depends(get_db)):
         events = [
             {
                 "id": e.id,
-                "timestamp": e.timestamp,
+                "timestamp": str(e.timestamp),
                 "actor_name": e.actor_name,
                 "actor_role": e.actor_role,
                 "action": e.action,

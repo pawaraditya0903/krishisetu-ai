@@ -37,8 +37,10 @@ __pycache__/
 *$py.class
 .venv/
 venv/
-backend/.venv/
 backend/uploads/
+uploads/
+**/uploads/
+**/public/uploads/
 *.db
 *.sqlite3
 
