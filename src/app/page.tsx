@@ -31,7 +31,11 @@ export default function LoginPage() {
     setLoadingUser(user.id);
     setAuthNote(null);
 
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+    const apiBaseUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (typeof window !== "undefined" && window.location.protocol === "https:"
+        ? "/api/v1"
+        : "http://127.0.0.1:8000/api/v1");
 
     try {
       const response = await fetch(`${apiBaseUrl}/auth/login`, {

@@ -53,7 +53,10 @@ export default function AdminAuditLedgerPage() {
     setIsVerifying(true);
     // Try backend verification first, fallback to store-based verification
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/audit/verify");
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (typeof window !== "undefined" ? "/api/v1" : "http://127.0.0.1:8000/api/v1");
+      const res = await fetch(`${apiBase}/audit/verify`);
       if (res.ok) {
         const data = await res.json();
         setVerificationResult({

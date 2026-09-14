@@ -79,15 +79,54 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     };
   }, [setOffline, language]);
 
-  // Client-side RBAC Guard: Restrict /admin/* to admin role only
+  // Client-side RBAC Guard: Restrict route access based on user role
   useEffect(() => {
-    if (pathname?.startsWith("/admin") && currentUser && currentUser.role !== "admin") {
+    if (!currentUser || !pathname) return;
+
+    const role = currentUser.role;
+
+    // 1. Admin route protection
+    if (pathname.startsWith("/admin") && role !== "admin") {
       toast.error(
         language === "mr"
           ? "प्रवेश नाकारला: प्रशासक अधिकार आवश्यक आहेत."
           : "Access Denied: Administrator privileges required."
       );
-      router.replace(`/${currentUser.role}`);
+      router.replace(`/${role}`);
+      return;
+    }
+
+    // 2. FPO route protection
+    if (pathname.startsWith("/fpo") && role !== "fpo" && role !== "admin") {
+      toast.error(
+        language === "mr"
+          ? "प्रवेश नाकारला: एफपीओ अधिकार आवश्यक आहेत."
+          : "Access Denied: FPO privileges required."
+      );
+      router.replace(`/${role}`);
+      return;
+    }
+
+    // 3. Buyer route protection
+    if (pathname.startsWith("/buyer") && role !== "buyer" && role !== "admin") {
+      toast.error(
+        language === "mr"
+          ? "प्रवेश नाकारला: खरेदीदार अधिकार आवश्यक आहेत."
+          : "Access Denied: Buyer privileges required."
+      );
+      router.replace(`/${role}`);
+      return;
+    }
+
+    // 4. Farmer route protection
+    if (pathname.startsWith("/farmer") && role !== "farmer" && role !== "admin") {
+      toast.error(
+        language === "mr"
+          ? "प्रवेश नाकारला: शेतकरी अधिकार आवश्यक आहेत."
+          : "Access Denied: Farmer privileges required."
+      );
+      router.replace(`/${role}`);
+      return;
     }
   }, [pathname, currentUser, router, language]);
 

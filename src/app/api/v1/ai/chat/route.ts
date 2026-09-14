@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     // 1. If Gemini API key is available, call Google Gemini (3.6 Flash / latest)
     if (apiKey && apiKey.trim() !== "") {
       try {
-        const candidateModels = ["gemini-3.6-flash"];
+        const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
         const langName = isMr
           ? "Marathi (मराठी)"
           : isHi

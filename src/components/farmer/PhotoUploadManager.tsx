@@ -135,12 +135,17 @@ export function PhotoUploadManager({
         if (uploadedItem) {
           newItems.push(uploadedItem);
         } else {
-          // Fallback object URL
-          const localUrl = URL.createObjectURL(file);
+          // Fallback persistent Data URL via FileReader (persists across page reloads & local storage)
+          const base64Url = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string) || URL.createObjectURL(file));
+            reader.onerror = () => resolve(URL.createObjectURL(file));
+            reader.readAsDataURL(file);
+          });
           const mockItem: ProductImageItem = {
             id: `IMG-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
             farmerId,
-            imageUrl: localUrl,
+            imageUrl: base64Url,
             storageKey: `local_${file.name}`,
             category,
             displayOrder: photos.filter((p) => p.category === category).length + newItems.length + 1,

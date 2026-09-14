@@ -66,7 +66,8 @@ class AuditTraceabilityEngine:
         else:
             prev_h = cls._latest_hash
 
-        timestamp = datetime.now(timezone.utc).isoformat()
+        now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+        timestamp = str(now_dt)
         current_hash = cls.calculate_event_hash(
             prev_hash=prev_h,
             timestamp=timestamp,
