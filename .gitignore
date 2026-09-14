@@ -1,6 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -10,46 +8,51 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# Next.js & Production Builds
 /.next/
 /out/
-
-# production
 /build
+*.tsbuildinfo
+next-env.d.ts
+.vercel
 
-# misc
+# Environment Variables
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+!backend/.env.example
+
+# Testing & Coverage
+/coverage
+.pytest_cache/
+backend/.pytest_cache/
+
+# Python Virtual Environments & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+backend/.venv/
+backend/uploads/
+*.db
+*.sqlite3
+
+# Operating System & IDE Files
 .DS_Store
+Thumbs.db
 *.pem
+*.tmp
+*.bak
+CLAUDE.md
+AGENTS.md
 
-# debug
+# Debug Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-.vercel
-
-# python
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.venv/
-venv/
-*.db
-backend/uploads/
-backend/.pytest_cache/
-backend/.venv/
