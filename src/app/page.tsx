@@ -22,14 +22,37 @@ const OFFICIAL_PORTAL_ACCOUNTS: PortalUserAccount[] = [
 ];
 
 export default function LoginPage() {
-  const login = useAppStore(state => state.login);
+  const login = useAppStore((state) => state.login);
+  const storedUsers = useAppStore((state) => state.users);
   const router = useRouter();
   const [loadingUser, setLoadingUser] = useState<string | null>(null);
   const [authNote, setAuthNote] = useState<string | null>(null);
 
+  // Merge official accounts with stored updates from Zustand store
+  const accountsToDisplay = OFFICIAL_PORTAL_ACCOUNTS.map((official) => {
+    const updated = storedUsers.find((u) => u.id === official.id || u.phone === official.phone);
+    if (updated) {
+      return {
+        ...official,
+        ...updated,
+        defaultPassword: official.defaultPassword,
+      };
+    }
+    return official;
+  });
+
   const handleLogin = async (user: PortalUserAccount) => {
     setLoadingUser(user.id);
     setAuthNote(null);
+
+    // Retrieve latest stored user record if modified by farmer or admin
+    const latestUser =
+      useAppStore.getState().users.find((u) => u.id === user.id || u.phone === user.phone) || user;
+    const mergedUser: PortalUserAccount = {
+      ...user,
+      ...latestUser,
+      defaultPassword: user.defaultPassword,
+    };
 
     const apiBaseUrl =
       process.env.NEXT_PUBLIC_API_URL ||
@@ -42,16 +65,16 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: user.phone,
-          password: user.defaultPassword
-        })
+          phone: mergedUser.phone,
+          password: mergedUser.defaultPassword,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        login(user, data.access_token);
-        setAuthNote(`Authenticated with secure backend JWT (${data.role})`);
-        router.push(`/${user.role}`);
+        login(mergedUser, data.access_token);
+        setAuthNote(`Authenticated with secure zero-trust JWT (${data.role})`);
+        router.push(`/${mergedUser.role}`);
         return;
       }
     } catch {
@@ -60,8 +83,8 @@ export default function LoginPage() {
     }
 
     // Offline / fallback session
-    login(user);
-    router.push(`/${user.role}`);
+    login(mergedUser);
+    router.push(`/${mergedUser.role}`);
   };
 
   return (
@@ -91,7 +114,7 @@ export default function LoginPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
-        {OFFICIAL_PORTAL_ACCOUNTS.map((user) => {
+        {accountsToDisplay.map((user) => {
           const isLoading = loadingUser === user.id;
           return (
             <Card

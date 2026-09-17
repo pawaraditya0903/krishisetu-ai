@@ -461,8 +461,34 @@ export const useAppStore = create<AppState>()(
       cropRequests: [],
 
       login: (user, token) => {
-        const userWithToken = { ...user, accessToken: token || user.accessToken };
-        set({ currentUser: userWithToken });
+        // Merge with existing user in store so custom location, phone, farm size, etc. are preserved
+        const existing = get().users.find(
+          (u) => u.id === user.id || (user.phone && u.phone === user.phone)
+        );
+        const mergedUser = existing
+          ? { ...existing, ...user, location: existing.location || user.location }
+          : user;
+        const userWithToken = { ...mergedUser, accessToken: token || mergedUser.accessToken };
+
+        let updatedFarmLocation = get().farmLocation;
+        if (!updatedFarmLocation && userWithToken.lat && userWithToken.lng) {
+          updatedFarmLocation = {
+            id: `LOC-${userWithToken.id}`,
+            label: userWithToken.location || `${userWithToken.district || "Farm"}, Maharashtra`,
+            district: userWithToken.district || "Pune",
+            state: userWithToken.state || "Maharashtra",
+            lat: userWithToken.lat,
+            lng: userWithToken.lng,
+            accuracy: "Manual (Taluka/District)",
+            updatedAt: new Date().toISOString(),
+          };
+        }
+
+        set({
+          currentUser: userWithToken,
+          ...(updatedFarmLocation ? { farmLocation: updatedFarmLocation } : {}),
+        });
+
         if (typeof window !== "undefined" && token) {
           try {
             localStorage.setItem("krishisetu_jwt", token);
@@ -484,8 +510,29 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           farmLocation: loc,
           currentUser: state.currentUser
-            ? { ...state.currentUser, location: loc.label }
+            ? {
+                ...state.currentUser,
+                location: loc.label,
+                district: loc.district,
+                state: loc.state,
+                lat: loc.lat,
+                lng: loc.lng,
+              }
             : null,
+          users: state.currentUser
+            ? state.users.map((u) =>
+                u.id === state.currentUser?.id
+                  ? {
+                      ...u,
+                      location: loc.label,
+                      district: loc.district,
+                      state: loc.state,
+                      lat: loc.lat,
+                      lng: loc.lng,
+                    }
+                  : u
+              )
+            : state.users,
         }));
         // Recalculate mandi prices dynamically from this farm location!
         const dynamic = calculateDynamicMandisForLocation(

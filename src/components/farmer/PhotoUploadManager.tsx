@@ -59,17 +59,107 @@ const CATEGORIES: PhotoCategoryConfig[] = [
 interface PhotoUploadManagerProps {
   photos: ProductImageItem[];
   onChange: (photos: ProductImageItem[]) => void;
+  cropName?: string;
   disabled?: boolean;
 }
+
+const SAMPLE_FIELD_PHOTOS: Record<string, { top: string; side: string; lot: string }> = {
+  Tomato: {
+    top: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1561136594-7f68413baa99?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1546470427-e26264be0b11?auto=format&fit=crop&w=600&q=80",
+  },
+  Onion: {
+    top: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=600&q=80",
+  },
+  Potato: {
+    top: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1590165482129-1b8b27698980?auto=format&fit=crop&w=600&q=80",
+  },
+  Pomegranate: {
+    top: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1541344999736-83eca872f242?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1576181256399-835f1f9a1f59?auto=format&fit=crop&w=600&q=80",
+  },
+  Soybean: {
+    top: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
+  },
+  Soyabean: {
+    top: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
+  },
+  Cotton: {
+    top: "https://images.unsplash.com/photo-1606041008023-472dfb5e530f?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1594897030560-692749557a55?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1606041008023-472dfb5e530f?auto=format&fit=crop&w=600&q=80",
+  },
+  Wheat: {
+    top: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=600&q=80",
+    side: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    lot: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
+  },
+};
 
 export function PhotoUploadManager({
   photos,
   onChange,
+  cropName = "Tomato",
   disabled = false,
 }: PhotoUploadManagerProps) {
   const { currentUser } = useStore();
   const [uploadingCategory, setUploadingCategory] = useState<PhotoCategory | null>(null);
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
+
+  const handleLoadSamplePhotos = () => {
+    const farmerId = currentUser?.id || "F1";
+    const sample = SAMPLE_FIELD_PHOTOS[cropName] || SAMPLE_FIELD_PHOTOS.Tomato;
+    const now = new Date().toISOString();
+
+    const sampleItems: ProductImageItem[] = [
+      {
+        id: `IMG-SAMPLE-TOP-${Date.now()}`,
+        farmerId,
+        imageUrl: sample.top,
+        storageKey: `sample_top_${cropName.toLowerCase()}`,
+        category: "TOP_VIEW",
+        displayOrder: 1,
+        uploadedAt: now,
+        fileType: "image/jpeg",
+        fileSize: 1024 * 750,
+      },
+      {
+        id: `IMG-SAMPLE-SIDE-${Date.now() + 1}`,
+        farmerId,
+        imageUrl: sample.side,
+        storageKey: `sample_side_${cropName.toLowerCase()}`,
+        category: "SIDE_VIEW",
+        displayOrder: 2,
+        uploadedAt: now,
+        fileType: "image/jpeg",
+        fileSize: 1024 * 820,
+      },
+      {
+        id: `IMG-SAMPLE-LOT-${Date.now() + 2}`,
+        farmerId,
+        imageUrl: sample.lot,
+        storageKey: `sample_lot_${cropName.toLowerCase()}`,
+        category: "LOT_VIEW",
+        displayOrder: 3,
+        uploadedAt: now,
+        fileType: "image/jpeg",
+        fileSize: 1024 * 910,
+      },
+    ];
+
+    onChange(sampleItems);
+    toast.success(`Loaded 3 field-calibrated sample photos for ${cropName}!`);
+  };
 
   // Separate file inputs for each category
   const fileInputRefs: Record<string, React.RefObject<HTMLInputElement | null>> = {
@@ -194,6 +284,33 @@ export function PhotoUploadManager({
 
   return (
     <div className="space-y-6">
+      {/* Sample Field Photo Demo Helper */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-emerald-50/50 border border-emerald-200/80 rounded-2xl">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <Camera className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-stone-900 block">
+              Multi-Angle Imagery for {cropName}
+            </span>
+            <span className="text-[11px] text-stone-500 block">
+              Upload 3 photos, or load calibrated farm sample photos for instant testing.
+            </span>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleLoadSamplePhotos}
+          className="text-xs font-semibold text-emerald-800 bg-white hover:bg-emerald-50 border-emerald-300 rounded-xl shadow-xs shrink-0 flex items-center gap-1.5"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          ⚡ Fill Sample Field Photos
+        </Button>
+      </div>
+
       {/* Category Upload Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {CATEGORIES.map((cat) => {

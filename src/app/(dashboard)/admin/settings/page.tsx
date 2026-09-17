@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { PlatformSettings } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,9 +25,23 @@ export default function AdminDiscoverySettingsPage() {
 
   const [form, setForm] = useState<PlatformSettings>({ ...platformSettings });
 
-  const handleSave = (e: React.FormEvent) => {
+  // Sync state when store rehydrates from persistent storage
+  useEffect(() => {
+    if (platformSettings) {
+      setForm(platformSettings);
+    }
+  }, [platformSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     updatePlatformSettings(form);
+    try {
+      await fetch("/api/v1/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } catch {}
     toast.success("Market Discovery & Platform Parameters updated successfully!");
   };
 

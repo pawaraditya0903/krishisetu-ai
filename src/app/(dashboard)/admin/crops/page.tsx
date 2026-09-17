@@ -86,6 +86,16 @@ export default function AdminCropsPage() {
         gradeRules: cropForm.gradeRules || [],
         status: cropForm.status || "Active",
       });
+
+      // Also persist to API route for live parity
+      try {
+        fetch("/api/v1/crops/catalog", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(created),
+        }).catch(() => {});
+      } catch {}
+
       toast.success(`Crop "${created.name}" created with ID ${created.id}!`);
       setIsAddModalOpen(false);
     }
