@@ -1,5 +1,5 @@
-import { calculateDynamicMandisForLocation } from "./src/lib/agricultural-data.ts";
-import { searchIndianLocations, calculateDistanceKm } from "./src/lib/geo-locations.ts";
+import { calculateDynamicMandisForLocation } from "../src/lib/agricultural-data.ts";
+import { searchIndianLocations, calculateDistanceKm } from "../src/lib/geo-locations.ts";
 
 console.log("==================================================");
 console.log("KRISHISETU AI - NATIONWIDE DYNAMIC VERIFICATION TEST");

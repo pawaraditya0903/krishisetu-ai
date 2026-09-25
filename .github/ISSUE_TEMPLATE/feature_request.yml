@@ -1,0 +1,28 @@
+name: 💡 Feature Request
+description: Propose a new feature, enhancement, or APMC integration for KrishiSetu AI
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggesting an idea for KrishiSetu AI? Tell us how it helps Indian farmers or FPO operations.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a specific challenge faced by farmers or buyers?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Approach
+      description: Describe your proposed solution and how it should work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features considered?
