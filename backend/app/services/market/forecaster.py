@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 from typing import Dict, Any, List
 import joblib
 import numpy as np
@@ -122,6 +123,10 @@ class MandiPriceForecaster:
                 "rolling_mean_7d", "rolling_std_7d", "arrival_qtl",
                 "arrival_shock_pct", "terminal_premium", "month", "day_of_week"
             ]
+            now_dt = datetime.now()
+            current_month = now_dt.month
+            current_weekday = now_dt.weekday()
+
             import pandas as pd
             row_df = pd.DataFrame([[
                 base,
@@ -134,8 +139,8 @@ class MandiPriceForecaster:
                 1100.0,
                 -0.08,
                 terminal_prem,
-                9,  # September
-                3   # Thursday
+                current_month,
+                current_weekday
             ]], columns=feature_cols)
 
             p10_pred = float(cls._models["p10"].predict(row_df)[0])
@@ -162,6 +167,8 @@ class MandiPriceForecaster:
             
             wmape = cls._metadata.get("wmape_pct", 5.09) if cls._metadata else 5.09
             model_ver = cls._metadata.get("model_version", "v2.2.0-agmarknet-3yr") if cls._metadata else "v2.2.0-agmarknet-3yr"
+            active_model_name = "LightGBM-Quantile-Regressor"
+            model_type = "LightGBM-Gradient-Boosting"
         else:
             # Calibrated quantile fallback
             for day, lift in horizons:
@@ -177,12 +184,15 @@ class MandiPriceForecaster:
                 })
             wmape = 5.2
             model_ver = "v2.2.0-baseline-quantile"
+            active_model_name = "Agmarknet-Statistical-Quantile-Baseline"
+            model_type = "Empirical-Quantile-Calibration"
 
         return {
             "crop": crop,
             "mandi": mandi,
             "forecast_points": forecast_points,
             "model_name": "LightGBM-Quantile-Regressor",
+            "model_type": model_type,
             "model_version": model_ver,
             "wmape": wmape,
             "feature_contributions": drivers,

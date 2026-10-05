@@ -64,6 +64,10 @@ class AuditTraceabilityEngine:
         elif db is not None:
             prev_h = cls.get_latest_hash(db)
         else:
+            import logging
+            logging.getLogger("audit").warning(
+                "Audit record created without database session; falling back to in-memory hash chain."
+            )
             prev_h = cls._latest_hash
 
         now_dt = datetime.now(timezone.utc).replace(tzinfo=None)

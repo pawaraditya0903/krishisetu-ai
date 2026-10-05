@@ -580,7 +580,6 @@ def get_agmarknet_prices(crop: Optional[str] = None, mandi: Optional[str] = None
     if mandi:
         mandi_clean = mandi.lower().strip()
         results = [m for m in results if mandi_clean in m["mandi"].lower() or mandi_clean in m["district"].lower()]
-    
     # Ensure freshness timestamp is dynamic
     today = get_today_str()
     updated_results = []
@@ -588,4 +587,7 @@ def get_agmarknet_prices(crop: Optional[str] = None, mandi: Optional[str] = None
         copy_r = dict(r)
         copy_r["reported_date"] = today
         updated_results.append(copy_r)
-    return updated_results or AGMARKNET_MAHARASHTRA_MANDIS
+
+    if not crop and not mandi:
+        return updated_results if updated_results else AGMARKNET_MAHARASHTRA_MANDIS
+    return updated_results

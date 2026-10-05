@@ -1,3 +1,4 @@
+import os
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,12 +7,13 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
-    # Security
-    SECRET_KEY: str = "krishisetu_sec_jwt_vault_sih2026_pilot_prod"
+    # Security (Fix C1)
+    # Reads dynamically from environment variable SECRET_KEY; provides isolated demo default for local sandbox
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "krishisetu_sec_jwt_vault_sih2026_pilot_prod")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours (hardened from 7 days)
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
-    TEST_MODE: bool = False
+    TEST_MODE: bool = os.getenv("TEST_MODE", "0").lower() in ("1", "true", "yes")
 
     # Databases
     DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/krishisetu"

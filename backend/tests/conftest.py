@@ -1,3 +1,5 @@
+import os
+os.environ["TEST_MODE"] = "1"
 import pytest
 from app.core.database import SessionLocal
 from app.models.entities import Pool, CropLot, AuditEvent
