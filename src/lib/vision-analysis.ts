@@ -74,11 +74,31 @@ function isCropPixel(cropName: string, r: number, g: number, b: number): boolean
   const sat = max === 0 ? 0 : (max - min) / max;
   const y = 0.299 * r + 0.587 * g + 0.114 * b;
 
+  const blueRatio = b / (r + 0.001);
+
+  // Human skin tone exclusion (face/hands): peach/tan tone with moderate blue and low red-green delta
+  const isHumanSkin =
+    r > 85 &&
+    g > 55 &&
+    b > 38 &&
+    r > g &&
+    g > b &&
+    r - g < 65 &&
+    blueRatio > 0.42 &&
+    blueRatio < 0.78 &&
+    sat < 0.52;
+
+  if (isHumanSkin) {
+    return false;
+  }
+
   if (norm.includes("tomato") || norm.includes("pomegranate")) {
-    // Red ripe or breaker yellow-orange
-    const isRed = r > 85 && r > 1.22 * g && r > 1.30 * b && sat > 0.22;
-    const isBreaker = r > 110 && g > 65 && b < 105 && r > g * 1.10 && sat > 0.20;
-    const isGreenTomato = g > 85 && r > 65 && b < 85 && g > b * 1.25;
+    // True ripe red tomato/pomegranate: high red dominance and low blue
+    const isRed = r > 100 && r > 1.38 * g && r > 1.65 * b && sat > 0.38 && blueRatio < 0.45;
+    // True breaker tomato: vibrant yellow-orange with high saturation and very low blue
+    const isBreaker = r > 140 && g > 75 && b < 80 && r > g * 1.15 && sat > 0.52 && blueRatio < 0.38;
+    // Green tomato: distinct agricultural green
+    const isGreenTomato = g > 90 && g > 1.15 * r && g > 1.25 * b && sat > 0.25;
     return isRed || isBreaker || isGreenTomato;
   }
 
