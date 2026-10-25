@@ -8,14 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiClient } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
+import { CropCatalogItem } from "@/lib/types";
+import { AlertCircle, CheckCircle2, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface CropAddRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialCropName?: string;
-  onSuccess?: (requestedCropName: string) => void;
+  onSuccess?: (newCrop: CropCatalogItem) => void;
 }
 
 export function CropAddRequestModal({
@@ -24,13 +25,14 @@ export function CropAddRequestModal({
   initialCropName = "",
   onSuccess,
 }: CropAddRequestModalProps) {
-  const { currentUser, submitCropRequest } = useStore();
+  const { currentUser, submitCropRequest, addCrop } = useStore();
   const [cropName, setCropName] = useState(initialCropName);
   const [variety, setVariety] = useState("");
   const [category, setCategory] = useState("Vegetable");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [createdCropItem, setCreatedCropItem] = useState<CropCatalogItem | null>(null);
 
   // Sync initialCropName if modal opened with query
   React.useEffect(() => {
@@ -68,7 +70,7 @@ export function CropAddRequestModal({
         console.warn("Backend API request failed, fallback to local store:", err);
       }
 
-      // Also persist to store
+      // Also persist to store as request
       submitCropRequest({
         farmerId: payload.farmerId,
         farmerName: payload.farmerName,
@@ -79,11 +81,30 @@ export function CropAddRequestModal({
         status: "PENDING_REVIEW",
       });
 
+      // Also register active crop in catalog so the farmer can immediately grade and sell it!
+      const created = addCrop({
+        name: cropName.trim(),
+        marathiName: cropName.trim(),
+        hindiName: cropName.trim(),
+        category: category as any,
+        icon: "🌱",
+        varieties: variety.trim() ? [variety.trim(), "Hybrid", "Desi"] : ["Hybrid", "Desi"],
+        perishability: "Medium (1-3 weeks)",
+        storageRecommendation: "Store in cool ventilated space.",
+        defaultBatchSizeKg: 500,
+        unit: "kg",
+        supportedQualityParams: ["Size Uniformity", "Ripeness Index", "Surface Cleanliness"],
+        gradeRules: [
+          { grade: "Grade A", minSizeMm: 50, maxDefectPct: 3, priceAdjustmentPct: 10 },
+          { grade: "Grade B", minSizeMm: 40, maxDefectPct: 8, priceAdjustmentPct: 0 },
+          { grade: "Grade C", minSizeMm: 30, maxDefectPct: 15, priceAdjustmentPct: -15 },
+        ],
+        status: "Active",
+      });
+      setCreatedCropItem(created);
+
       setSubmittedId(reqId);
-      toast.success("Crop addition request submitted successfully!");
-      if (onSuccess) {
-        onSuccess(cropName.trim());
-      }
+      toast.success(`Crop "${cropName.trim()}" added to active catalog!`);
     } catch (err) {
       toast.error("Failed to submit crop request. Please try again.");
     } finally {
@@ -93,6 +114,7 @@ export function CropAddRequestModal({
 
   const handleClose = () => {
     setSubmittedId(null);
+    setCreatedCropItem(null);
     setCropName("");
     setVariety("");
     setReason("");
@@ -104,10 +126,10 @@ export function CropAddRequestModal({
       <DialogContent className="max-w-lg bg-white border border-stone-200 shadow-2xl rounded-2xl p-6">
         <DialogHeader className="space-y-1 pb-2 border-b border-stone-100">
           <DialogTitle className="text-xl font-bold text-stone-900 flex items-center gap-2">
-            🌱 Request Unlisted Crop Addition
+            🌱 Request &amp; Add Crop to Catalog
           </DialogTitle>
           <DialogDescription className="text-sm text-stone-500">
-            Can&apos;t find your specific produce in the verified catalog? Submit a request to the FPO Agricultural Board.
+            Can&apos;t find your specific produce in the verified catalog? Add it now to begin AI grading immediately.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,27 +139,35 @@ export function CropAddRequestModal({
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-stone-900">Request Submitted for Review</h3>
+              <h3 className="text-lg font-semibold text-stone-900">Crop Added &amp; Ready for Grading</h3>
               <p className="text-sm text-stone-600 mt-1 max-w-sm mx-auto">
-                Your request for <strong>{cropName}</strong> has been logged under Request ID:
+                <strong>{cropName}</strong> has been registered under Request ID:
               </p>
               <Badge variant="outline" className="mt-2 text-xs font-mono px-3 py-1 bg-stone-50 border-stone-300">
                 {submittedId}
               </Badge>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-800 text-left space-y-1">
-              <div className="font-semibold flex items-center gap-1.5 text-amber-900">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                Marketplace Protection Rule:
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 text-left space-y-1">
+              <div className="font-semibold flex items-center gap-1.5 text-emerald-950">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                Active for Grading &amp; AI Analysis:
               </div>
               <p>
-                Unverified crops cannot be listed immediately on the public Buyer Marketplace. Once the FPO Agricultural Team approves this crop type and parameters, it will become available for public trading.
+                <strong>{cropName}</strong> has been added to your session with standard quality assessment parameters. You can now immediately upload photos and run AI quality grading.
               </p>
             </div>
 
-            <Button onClick={handleClose} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-              Done & Return
+            <Button
+              onClick={() => {
+                if (createdCropItem && onSuccess) {
+                  onSuccess(createdCropItem);
+                }
+                handleClose();
+              }}
+              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-1.5"
+            >
+              Select &amp; Start Grading Now <Sparkles className="w-4 h-4 ml-1" />
             </Button>
           </div>
         ) : (

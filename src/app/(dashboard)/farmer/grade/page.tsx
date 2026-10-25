@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Loader2, ArrowRight, ShieldCheck, Sparkles, CheckCircle2, PackageCheck } from "lucide-react";
+import { AlertTriangle, Loader2, ArrowRight, ShieldCheck, Sparkles, CheckCircle2, PackageCheck, Save } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
@@ -454,7 +454,7 @@ export default function GradeCropPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <PhotoUploadManager photos={uploadedPhotos} onChange={setUploadedPhotos} />
+            <PhotoUploadManager photos={uploadedPhotos} onChange={setUploadedPhotos} cropName={formData.crop} />
 
             {/* Model Provenance & Field Adaptation Banner */}
             <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs space-y-1">
@@ -640,21 +640,23 @@ export default function GradeCropPage() {
               </div>
             </CardContent>
 
-            <CardFooter className="bg-stone-50 p-5 border-t border-stone-200 flex flex-col sm:flex-row gap-3">
+            <CardFooter className="bg-stone-50 p-5 border-t border-stone-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full text-xs font-semibold rounded-xl border-stone-300"
+                className="w-full text-xs font-semibold rounded-xl border-stone-300 py-3 h-auto whitespace-normal flex items-center justify-center gap-2 hover:bg-stone-100 text-stone-700 shadow-xs"
                 onClick={() => handleSaveProduct("DRAFT")}
               >
-                Save as Draft Product
+                <Save className="w-4 h-4 shrink-0 text-stone-500" />
+                <span>Save as Draft Product</span>
               </Button>
               <Button
                 type="button"
-                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm py-3 h-auto whitespace-normal"
                 onClick={() => handleSaveProduct("SUBMIT_FPO")}
               >
-                <PackageCheck className="w-4 h-4" /> Submit for FPO Verification &amp; Pooling
+                <PackageCheck className="w-4 h-4 shrink-0" />
+                <span>Submit for FPO Verification &amp; Pooling</span>
               </Button>
             </CardFooter>
           </Card>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CropAddRequestModal } from "./CropAddRequestModal";
+import { toast } from "sonner";
 import {
   Search,
   Check,
@@ -35,7 +36,7 @@ export function CropSearchSelector({
   onCropChange,
   disabled = false,
 }: CropSearchSelectorProps) {
-  const { cropsCatalog } = useStore();
+  const { cropsCatalog, addCrop } = useStore();
 
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -48,15 +49,23 @@ export function CropSearchSelector({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync catalog from backend API if available, fallback to store
+  // Sync catalog from backend API if available, fallback and merge with store
   useEffect(() => {
     let isMounted = true;
     apiClient.crops
       .getCatalog()
       .then((res) => {
-        const items = res?.data || (Array.isArray(res) ? (res as any) : null);
+        const raw = res?.data;
+        const items = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as any)?.crops)
+          ? (raw as any).crops
+          : Array.isArray(res)
+          ? res
+          : null;
+
         if (isMounted && Array.isArray(items) && items.length > 0) {
-          // Normalize backend items to CropCatalogItem format if needed
+          // Normalize backend items to CropCatalogItem format
           const normalized: CropCatalogItem[] = items.map((it: any) => ({
             id: it.id,
             name: it.name,
@@ -75,7 +84,17 @@ export function CropSearchSelector({
             gradeRules: it.gradeRules || [],
             status: "Active",
           }));
-          setCatalogList(normalized);
+
+          // Merge store custom crops with API catalog
+          const combined = [...normalized];
+          cropsCatalog.forEach((stCrop) => {
+            if (!combined.some((c) => c.id.toLowerCase() === stCrop.id.toLowerCase() || c.name.toLowerCase() === stCrop.name.toLowerCase())) {
+              combined.push(stCrop);
+            }
+          });
+          setCatalogList(combined);
+        } else {
+          setCatalogList(cropsCatalog);
         }
       })
       .catch(() => {
@@ -154,6 +173,34 @@ export function CropSearchSelector({
     setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
+  };
+
+  const handleDirectAddCrop = (nameToAdd: string) => {
+    const trimmed = nameToAdd.trim();
+    if (!trimmed) return;
+    const created = addCrop({
+      name: trimmed,
+      marathiName: trimmed,
+      hindiName: trimmed,
+      category: "Vegetable",
+      icon: "🌱",
+      varieties: ["Hybrid", "Desi"],
+      perishability: "Medium (1-3 weeks)",
+      storageRecommendation: "Store properly in ventilated crates.",
+      defaultBatchSizeKg: 500,
+      unit: "kg",
+      supportedQualityParams: ["Size Uniformity", "Ripeness Index", "Color Uniformity"],
+      gradeRules: [
+        { grade: "Grade A", minSizeMm: 50, maxDefectPct: 3, priceAdjustmentPct: 10 },
+        { grade: "Grade B", minSizeMm: 40, maxDefectPct: 8, priceAdjustmentPct: 0 },
+        { grade: "Grade C", minSizeMm: 30, maxDefectPct: 15, priceAdjustmentPct: -15 },
+      ],
+      status: "Active",
+    });
+
+    setCatalogList((prev) => [created, ...prev]);
+    handleSelectCrop(created);
+    toast.success(`Crop "${trimmed}" added and selected for grading!`);
   };
 
   // Keyboard navigation
@@ -282,26 +329,36 @@ export function CropSearchSelector({
               ) : (
                 /* Empty state when not found */
                 <div className="p-5 text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
-                    <Search className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-stone-800">
-                      No matching crop found for &quot;{query}&quot;
+                      Unlisted Crop: &quot;{query}&quot;
                     </p>
                     <p className="text-xs text-stone-500 mt-0.5">
-                      KrishiSetu verifies all crops before allowing them into the commercial buyer marketplace.
+                      You can add &quot;{query}&quot; directly to start AI grading immediately, or submit for catalog verification.
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsRequestModalOpen(true)}
-                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold gap-1.5 mx-auto"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    Request to Add &quot;{query}&quot; to Catalog
-                  </Button>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      onClick={() => handleDirectAddCrop(query)}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold gap-1.5 shadow-sm px-4 py-2"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Add &amp; Grade &quot;{query}&quot; Now
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsRequestModalOpen(true)}
+                      className="border-stone-300 text-stone-700 hover:bg-stone-50 text-xs gap-1.5"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      Add with Custom Details
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -443,9 +500,12 @@ export function CropSearchSelector({
         isOpen={isRequestModalOpen}
         initialCropName={query}
         onClose={() => setIsRequestModalOpen(false)}
-        onSuccess={(reqName) => {
-          // Keep current modal closed
+        onSuccess={(newCrop) => {
           setIsRequestModalOpen(false);
+          if (newCrop) {
+            setCatalogList((prev) => [newCrop, ...prev]);
+            handleSelectCrop(newCrop);
+          }
         }}
       />
     </div>
