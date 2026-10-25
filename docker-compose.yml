@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: krishisetu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: krishisetu
+      POSTGRES_USER: krishisetu
+      POSTGRES_PASSWORD: krishisetu_sih_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U krishisetu -d krishisetu"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: krishisetu_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: krishisetu_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://krishisetu:${POSTGRES_PASSWORD:-krishisetu_sih_secret}@postgres:5432/krishisetu
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-krishisetu_vault_jwt_sih2026_prod}
+      PROJECT_NAME: "KrishiSetu AI Backend API"
+      API_V1_STR: "/api/v1"
+      PILOT_CROP: "Tomato"
+      PILOT_DISTRICT: "Pune"
+      PILOT_STATE: "Maharashtra"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: krishisetu_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

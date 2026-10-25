@@ -4,6 +4,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-krishisetu--ai.vercel.app-2ea44f?style=for-the-badge&logo=vercel)](https://krishisetu-ai-mu.vercel.app)
 [![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-2026%20Grand%20Finale-orange?style=for-the-badge)](https://sih.gov.in)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.2-black?logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -35,7 +36,7 @@ Smallholder farmers across India suffer from **18% to 35% net realization loss**
 - **`[PRODUCTION TARGET / OPTIONAL]` PostgreSQL 16 + PostGIS**: Production enterprise database target with spatial geometry extension.
 - **`[PROTOTYPE / OPTIONAL WORKER]` Redis 7 + RQ**: Asynchronous background queue for offline batch retraining.
 
-> Detailed engineering references: [AUDIT_REPORT.md](AUDIT_REPORT.md) • [ARCHITECTURE.md](ARCHITECTURE.md) • [SECURITY.md](SECURITY.md) • [AI_ML.md](AI_ML.md) • [MODEL_CARD.md](MODEL_CARD.md) • [JUDGES_QA.md](JUDGES_QA.md)
+> 📚 **Detailed Engineering & Architecture Suite**: [ARCHITECTURE.md](docs/ARCHITECTURE.md) • [AI_ML.md](docs/AI_ML.md) • [MODEL_CARD.md](docs/MODEL_CARD.md) • [AUDIT_REPORT.md](docs/AUDIT_REPORT.md) • [DECISIONS.md](docs/DECISIONS.md) • [JUDGES_QA.md](docs/JUDGES_QA.md) • [SECURITY.md](SECURITY.md) • [Documentation Index](docs/README.md)
 
 ---
 
