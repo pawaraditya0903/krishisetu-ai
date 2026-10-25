@@ -1,0 +1,62 @@
+{
+  "model_name": "LightGBM-Quantile-Regressor",
+  "model_version": "v2.2.0-agmarknet-3yr",
+  "trained_at": "2026-09-13T16:16:05.265678",
+  "training_dataset": "Agmarknet Maharashtra Daily Time Series (2023-01-01 to 2026-03-01)",
+  "features": [
+    "modal_price",
+    "lag_1d",
+    "lag_3d",
+    "lag_7d",
+    "lag_14d",
+    "rolling_mean_7d",
+    "rolling_std_7d",
+    "arrival_qtl",
+    "arrival_shock_pct",
+    "terminal_premium",
+    "month",
+    "day_of_week"
+  ],
+  "wmape_pct": 5.09,
+  "metrics": {
+    "p10": {
+      "pinball_loss": 25.533,
+      "mae": 204.7
+    },
+    "p50": {
+      "pinball_loss": 56.047,
+      "mae": 112.09
+    },
+    "p90": {
+      "pinball_loss": 27.339,
+      "mae": 160.69
+    }
+  },
+  "top_feature_importances": [
+    {
+      "feature": "rolling_std_7d",
+      "importance": 477
+    },
+    {
+      "feature": "lag_14d",
+      "importance": 412
+    },
+    {
+      "feature": "modal_price",
+      "importance": 384
+    },
+    {
+      "feature": "month",
+      "importance": 384
+    },
+    {
+      "feature": "rolling_mean_7d",
+      "importance": 368
+    },
+    {
+      "feature": "arrival_qtl",
+      "importance": 307
+    }
+  ],
+  "non_guarantee_disclaimer": "\u26a0\ufe0f STATUTORY NOTICE: Price forecasts are probabilistic quantile estimates (P10/P50/P90) calculated from 3-year Agmarknet daily arrivals for educational decision-support, and do NOT guarantee actual mandi clearing rates or trading realizations."
+}

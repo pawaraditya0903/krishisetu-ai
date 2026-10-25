@@ -73,16 +73,19 @@ export default function FarmerOrdersPage() {
             <div className="space-y-1 text-xs">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-slate-900 text-sm">
-                  {isMr ? "संरक्षित ३-टप्प्यांची नोडल एस्क्रो प्रणाली (RBI PA/PG धोरण)" : "Protected 3-Stage Milestone Nodal Escrow (RBI PA/PG Policy)"}
+                  {isMr ? "नोडल एस्क्रो कार्यप्रवाह सिम्युलेशन (टप्प्याटप्प्याने सेटलमेंट)" : "Nodal Escrow Workflow Simulation (Milestone-Based Settlement)"}
                 </span>
+                <Badge className="bg-amber-100 text-amber-900 border-none text-[10px] font-bold">
+                  SIMULATED PAYMENT
+                </Badge>
                 <Badge className="bg-purple-100 text-purple-800 border-none text-[10px] font-semibold">
                   Zero Advance Default Protection
                 </Badge>
               </div>
               <p className="text-slate-600 text-[11px] leading-relaxed">
-                खरेदीदारांचे पैसे थेट <strong>RBI-मान्यताप्राप्त नोडल खात्यात (YESB0000109)</strong> जमा होतात. 
-                कोणत्याही गैरव्यवहारापासून संरक्षणासाठी ₹0 ॲडव्हान्स दिला जातो. 
-                माल FPO संकलन केंद्रावर वजन व प्रतवारी झाल्यानंतर <strong>८०% रक्कम त्वरित</strong> बँक खात्यात जमा होते, आणि उर्वरित <strong>२०% २४ तासांनंतर</strong> सुरक्षितपणे दिली जाते.
+                {isMr
+                  ? "खरेदीदारांचे पैसे थेट सुरक्षित नोडल खाते सिम्युलेशनमध्ये (YESB0000109-NODAL) राखीव ठेवले जातात. ₹0 आगाऊ उचल, FPO वजन पडताळणीनंतर ८०% थेट खात्यात, आणि उर्वरित २०% डिलिव्हरीनंतर वितरित केले जातात."
+                  : "Nodal escrow workflow simulation designed around milestone-based settlement (YESB0000109-NODAL-*). ₹0 advance at booking, 80% on FPO weighment verification, and 20% post-delivery clearance."}
               </p>
             </div>
           </div>
