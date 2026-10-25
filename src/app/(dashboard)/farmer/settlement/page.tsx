@@ -22,6 +22,23 @@ export default function SettlementPage() {
         </p>
       </div>
 
+      {/* RBI Nodal Account Milestone Escrow Safeguard Banner */}
+      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-xs text-emerald-950 shadow-sm">
+        <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-emerald-900">Protected Milestone Nodal Escrow (RBI Guidelines Compliant)</span>
+            <span className="px-1.5 py-0.2 bg-emerald-200/80 text-emerald-900 text-[10px] font-semibold rounded">Zero Advance Default Protection</span>
+          </div>
+          <p className="text-emerald-800 text-[11px] leading-relaxed">
+            Funds are held in scheduled commercial bank Nodal Account (<code>YESB0000109-NODAL-*</code>). 
+            <strong> Stage 1:</strong> ₹0 advance at order placement &bull; 
+            <strong> Stage 2:</strong> 80% released upon physical weigh-bridge check-in at FPO hub &bull; 
+            <strong> Stage 3:</strong> 20% balance settled post-transit delivery SLA. Eliminates non-delivery fraud.
+          </p>
+        </div>
+      </div>
+
       {mySettlements.length === 0 && (
         <div className="p-8 text-center text-slate-500 border border-dashed rounded-xl bg-slate-50 text-xs sm:text-sm">
           {t.settlement.noSettlements}

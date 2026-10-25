@@ -250,6 +250,28 @@ export default function MarketPricesPage() {
         </Button>
       </div>
 
+      {/* Statutory Agmarknet Attribution & Educational Disclaimer */}
+      <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-950 shadow-sm">
+        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-amber-900">
+              {isMr ? "वैधानिक अस्वीकरण व डेटा संदर्भ (Agmarknet / DMI)" : isHi ? "वैधानिक अस्वीकरण और डेटा स्रोत (Agmarknet)" : "Statutory Disclaimer & Data Provenance (Agmarknet / DMI)"}
+            </span>
+            <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 text-[10px] font-semibold rounded">
+              3-Year Historical Daily Arrivals
+            </span>
+          </div>
+          <p className="text-amber-800 text-[11px] leading-relaxed">
+            {isMr
+              ? "बाजारभाव व अंदाज हे केंद्र सरकारच्या Agmarknet व DMI च्या ३ वर्षांच्या ऐतिहासिक डेटावर आधारित संभाव्य अंदाज (P10/P50/P90) आहेत. हे केवळ शैक्षणिक व शेती नियोजनासाठी असून थेट ट्रेडिंग सल्ला किंवा हमीभाव नाही."
+              : isHi
+              ? "मंडी भाव और पूर्वानुमान Agmarknet / DMI के 3 वर्षों के ऐतिहासिक आंकड़ों पर आधारित सांख्यिकीय अनुमान हैं। यह केवल शैक्षिक और निर्णय-सहायता के लिए है, वित्तीय या ट्रेडिंग सलाह नहीं।"
+              : "Mandi prices and forecasts are probabilistic quantile projections (P10/P50/P90) based on 3-year historical daily arrival records from Agmarknet / Directorate of Marketing & Inspection (Govt of India). Strictly for educational and harvest-planning decision-support; does NOT constitute guaranteed pricing or commercial trading advice."}
+          </p>
+        </div>
+      </div>
+
       {/* Multi-Crop Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <span className="text-xs font-semibold text-slate-500 flex items-center gap-1 shrink-0">
