@@ -100,9 +100,11 @@ Do not use complicated markdown asterisks or symbols so it sounds natural when s
       language,
       actionHint: reply.hint,
     });
-  } catch {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("AI Assistant API Error Details:", errorMsg);
     return NextResponse.json(
-      { error: "Internal Server Error in AI Assistant" },
+      { error: errorMsg },
       { status: 500 }
     );
   }
