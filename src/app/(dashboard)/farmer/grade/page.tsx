@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Loader2, ArrowRight, ShieldCheck, Sparkles, CheckCircle2, PackageCheck, Save } from "lucide-react";
+import { AlertTriangle, AlertCircle, Loader2, ArrowRight, ShieldCheck, Sparkles, CheckCircle2, PackageCheck, Save, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { translations } from "@/lib/i18n";
 import { CropSearchSelector } from "@/components/farmer/CropSearchSelector";
 import { PhotoUploadManager } from "@/components/farmer/PhotoUploadManager";
+import { evaluateMultiPhotoQuality } from "@/lib/vision-analysis";
 
 const CROP_FALLBACKS: Record<string, { size: string; ripeness: string; color: string; blemish: string }> = {
   Tomato: {
@@ -158,68 +159,102 @@ export default function GradeCropPage() {
     setAnalysisStatus("Checking OpenCV Image Quality (Laplacian sharpness & illumination)...");
 
     const t1 = setTimeout(() => {
-      setProgress(55);
-      setAnalysisStatus(`Running KrishiSetu Deep CNN on multi-angle photos for ${formData.crop}...`);
-    }, 800);
+      setProgress(45);
+      setAnalysisStatus(`Running KrishiSetu Computer Vision & Produce Verification on ${formData.crop}...`);
+    }, 700);
 
     const t2 = setTimeout(() => {
-      setProgress(85);
-      setAnalysisStatus("Evaluating external visual defect ratio against FPO standards...");
-    }, 1600);
+      setProgress(75);
+      setAnalysisStatus("Verifying crop chromaticity & calculating surface defect ratios...");
+    }, 1400);
 
-    // Call backend quality grading if photos available
-    let backendGrade: any = null;
+    let finalResult: QualityAnalysisResult | null = null;
+
     try {
       if (uploadedPhotos.length > 0) {
-        const firstPhoto = uploadedPhotos[0];
-        const blob = await fetch(firstPhoto.imageUrl).then((r) => r.blob()).catch(() => null);
-        if (blob) {
-          const res = await apiClient.vision.analyzeImage(blob, formData.crop);
-          if (res && res.data) {
-            backendGrade = res.data;
+        // Extract real pixel telemetry across all uploaded multi-angle images
+        const imageUrls = uploadedPhotos.map((p) => p.imageUrl);
+        const visionTelemetry = await evaluateMultiPhotoQuality(imageUrls, formData.crop);
+
+        // Sync with backend API
+        try {
+          const firstPhoto = uploadedPhotos[0];
+          const blob = await fetch(firstPhoto.imageUrl).then((r) => r.blob()).catch(() => null);
+          if (blob) {
+            await apiClient.vision.analyzeImage(blob, formData.crop, visionTelemetry);
           }
+        } catch (apiErr) {
+          console.warn("Backend API sync warning:", apiErr);
         }
+
+        finalResult = {
+          blurScore: visionTelemetry.blurScore,
+          blurPassed: visionTelemetry.blurPassed,
+          brightnessScore: visionTelemetry.brightnessScore,
+          brightnessPassed: visionTelemetry.brightnessPassed,
+          occupancyScore: visionTelemetry.occupancyScore,
+          occupancyPassed: visionTelemetry.occupancyPassed,
+          pHash: visionTelemetry.pHash,
+          externalScore: visionTelemetry.externalScore,
+          estimatedGrade: visionTelemetry.estimatedGrade as any,
+          confidence: visionTelemetry.confidence,
+          confidencePct: visionTelemetry.confidencePct,
+          detectedIssues: visionTelemetry.detectedIssues,
+          parameters: visionTelemetry.parameters,
+          disclaimer: visionTelemetry.disclaimer,
+          needsFpoReview: visionTelemetry.needsFpoReview,
+          modelTimestamp: visionTelemetry.modelTimestamp,
+          isMockInference: false,
+        };
       }
     } catch (e) {
-      console.warn("Backend quality API fallback:", e);
+      console.warn("Real-time vision error:", e);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2200));
+    await new Promise((resolve) => setTimeout(resolve, 1800));
 
     clearTimeout(t1);
     clearTimeout(t2);
     setProgress(100);
     setAnalyzing(false);
 
-    const cropConfig = CROP_FALLBACKS[formData.crop] || CROP_FALLBACKS.Tomato;
-    const isQualityGood = true;
+    if (!finalResult) {
+      const cropConfig = CROP_FALLBACKS[formData.crop] || CROP_FALLBACKS.Tomato;
+      finalResult = {
+        blurScore: 110.0,
+        blurPassed: true,
+        brightnessScore: 120.0,
+        brightnessPassed: true,
+        occupancyScore: 70.0,
+        occupancyPassed: true,
+        pHash: "fallback_signature",
+        externalScore: 65,
+        estimatedGrade: "Grade C",
+        confidence: "Low",
+        confidencePct: 40,
+        detectedIssues: ["Image analysis requires manual physical inspection at FPO hub."],
+        parameters: {
+          sizeUniformity: cropConfig.size,
+          ripenessIndex: cropConfig.ripeness,
+          surfaceDefectsPct: 5.0,
+          colorScore: cropConfig.color,
+        },
+        disclaimer: `Physical verification required at FPO collection center.`,
+        modelTimestamp: new Date().toISOString(),
+        isMockInference: true,
+      };
+    }
 
-    const analysisResult: QualityAnalysisResult = {
-      blurScore: backendGrade?.blur_variance || 146.5,
-      blurPassed: true,
-      brightnessScore: backendGrade?.brightness || 132.0,
-      brightnessPassed: true,
-      occupancyScore: backendGrade?.occupancy || 84.0,
-      occupancyPassed: true,
-      pHash: backendGrade?.phash || "9a2f7c81b0e35d12",
-      externalScore: backendGrade?.quality_score || (isQualityGood ? 91 : 75),
-      estimatedGrade: (backendGrade?.estimated_grade as any) || "Grade A",
-      confidence: "High",
-      confidencePct: 93,
-      detectedIssues: [cropConfig.blemish],
-      parameters: {
-        sizeUniformity: cropConfig.size,
-        ripenessIndex: cropConfig.ripeness,
-        surfaceDefectsPct: isQualityGood ? 1.6 : 4.0,
-        colorScore: cropConfig.color,
-      },
-      disclaimer: `External visual-quality estimate for ${formData.crop}. Internal moisture, sugar index (Brix), and chemical residue are not measurable from surface photos alone and are subject to physical verification at the FPO collection center.`,
-      modelTimestamp: new Date().toISOString(),
-      isMockInference: !backendGrade,
-    };
-
-    setGradeResult(analysisResult);
+    setGradeResult(finalResult);
     setStep(3);
+
+    if (finalResult.externalScore < 50 || finalResult.estimatedGrade === "Grade C") {
+      toast.warning("Produce verification flagged issues or invalid produce.", {
+        description: "Please inspect detected issues below. Manual FPO inspection required.",
+      });
+    } else {
+      toast.success(`AI Quality Grading Complete: ${finalResult.estimatedGrade}!`);
+    }
   };
 
   const handleSaveProduct = async (actionType: "DRAFT" | "SUBMIT_FPO") => {
@@ -515,153 +550,282 @@ export default function GradeCropPage() {
       )}
 
       {/* Step 3: Analysis Results & Product Save */}
-      {step === 3 && gradeResult && (
-        <div className="space-y-5">
-          <Card className="border-emerald-200 shadow-lg overflow-hidden rounded-2xl">
-            {/* Header Badge Card */}
-            <div className="bg-emerald-800 text-white p-6 text-center">
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider bg-emerald-700/80 px-3 py-1 rounded-full text-emerald-100 inline-block">
-                  AI Quality Classification
-                </span>
-                <span className="text-[10px] font-bold uppercase bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full">
-                  AI ESTIMATE
-                </span>
-                <span className="text-[10px] font-bold uppercase bg-purple-300 text-purple-950 px-2.5 py-0.5 rounded-full">
-                  PHYSICAL WEIGH-SLIP REQUIRED
-                </span>
-              </div>
-              <h2 className="text-4xl font-extrabold mb-1">{gradeResult.estimatedGrade}</h2>
-              <p className="text-sm text-emerald-100">
-                Overall Visual Quality Score: <strong>{gradeResult.externalScore}/100</strong> ({gradeResult.confidence} Confidence • {gradeResult.confidencePct}%)
-              </p>
-            </div>
+      {step === 3 && gradeResult && (() => {
+        const isRejected = gradeResult.externalScore < 50;
+        const isGradeB = gradeResult.estimatedGrade === "Grade B";
+        const headerBg = isRejected
+          ? "bg-rose-900 border-rose-800 text-white"
+          : isGradeB
+          ? "bg-amber-800 border-amber-700 text-white"
+          : "bg-emerald-800 border-emerald-700 text-white";
 
-            <CardContent className="p-6 space-y-6">
-              {/* Product Summary */}
-              <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-stone-400 block text-[10px]">Crop &amp; Cultivar</span>
-                  <strong className="text-stone-900 font-semibold">{formData.crop} ({formData.variety})</strong>
+        const allGatesPassed =
+          gradeResult.blurPassed &&
+          gradeResult.brightnessPassed &&
+          gradeResult.occupancyPassed &&
+          !isRejected;
+
+        return (
+          <div className="space-y-5">
+            <Card className={`overflow-hidden rounded-2xl shadow-lg border ${isRejected ? "border-rose-300" : "border-emerald-200"}`}>
+              {/* Header Badge Card */}
+              <div className={`${headerBg} p-6 text-center transition-colors`}>
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider bg-black/25 px-3 py-1 rounded-full inline-block">
+                    {isRejected ? "Produce Verification Alert" : "AI Quality Classification"}
+                  </span>
+                  {isRejected ? (
+                    <span className="text-[10px] font-bold uppercase bg-rose-500 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                      NON-CROP / INVALID DETECTED
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold uppercase bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full">
+                      AI ESTIMATE
+                    </span>
+                  )}
+                  <span className="text-[10px] font-bold uppercase bg-purple-200 text-purple-950 px-2.5 py-0.5 rounded-full">
+                    PHYSICAL WEIGH-SLIP REQUIRED
+                  </span>
                 </div>
-                <div>
-                  <span className="text-stone-400 block text-[10px]">Total Volume</span>
-                  <strong className="text-stone-900 font-semibold">{formData.quantity} {formData.unit}</strong>
-                </div>
-                <div>
-                  <span className="text-stone-400 block text-[10px]">Target Asking Price</span>
-                  <strong className="text-emerald-700 font-semibold">₹{formData.askingPrice} / {formData.unit}</strong>
-                </div>
-                <div>
-                  <span className="text-stone-400 block text-[10px]">Hub Location</span>
-                  <strong className="text-stone-900 font-semibold">{formData.collectionHub}</strong>
-                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-extrabold mb-1">
+                  {isRejected ? "Grade C (Verification Flagged)" : gradeResult.estimatedGrade}
+                </h2>
+                <p className="text-sm opacity-90">
+                  {isRejected
+                    ? `AI Produce Validation Failed • Visual match below threshold for ${formData.crop}`
+                    : `Overall Visual Quality Score: ${gradeResult.externalScore}/100 (${gradeResult.confidence} Confidence • ${gradeResult.confidencePct}%)`}
+                </p>
               </div>
 
-              {/* Uploaded Photos Preview */}
-              <div>
-                <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                  Multi-Angle Source Imagery ({uploadedPhotos.length} photos)
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {uploadedPhotos.map((img, i) => (
-                    <div key={img.id || i} className="aspect-square rounded-xl overflow-hidden bg-stone-100 border border-stone-200 relative">
-                      <img src={img.imageUrl} alt={`Image ${i}`} className="w-full h-full object-cover" />
-                      <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded font-mono">
-                        {img.category.replace("_VIEW", "")}
+              <CardContent className="p-6 space-y-6">
+                {/* Detected Issues Banner */}
+                {gradeResult.detectedIssues && gradeResult.detectedIssues.length > 0 && (
+                  <div
+                    className={`p-4 rounded-xl border text-xs space-y-2 ${
+                      isRejected
+                        ? "bg-rose-50/90 border-rose-300 text-rose-950"
+                        : "bg-amber-50/70 border-amber-200 text-amber-950"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5">
+                      {isRejected ? (
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      )}
+                      <span>
+                        {isRejected
+                          ? "Produce Verification Findings & Rejection Details:"
+                          : "Visual Quality Telemetry Findings:"}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <ul className="list-disc pl-5 space-y-1 text-[11px] leading-relaxed">
+                      {gradeResult.detectedIssues.map((issue, idx) => (
+                        <li key={idx} className="font-medium">
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-              {/* Computer Vision Gate Telemetry */}
-              <div>
-                <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                  OpenCV Quality Gate Validation
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-[10px] text-stone-500 block">Sharpness (Laplacian)</span>
-                    <strong className="font-semibold text-stone-800">{gradeResult.blurScore?.toFixed(1) ?? "146.5"}</strong>
-                    <span className="text-[9px] text-emerald-600 block mt-0.5 font-medium">✓ Passed (&gt; 100)</span>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-[10px] text-stone-500 block">Illumination Index</span>
-                    <strong className="font-semibold text-stone-800">{gradeResult.brightnessScore?.toFixed(1) ?? "132.0"}</strong>
-                    <span className="text-[9px] text-emerald-600 block mt-0.5 font-medium">✓ Passed (80-200)</span>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-[10px] text-stone-500 block">Crate / Lot Framing</span>
-                    <strong className="font-semibold text-stone-800">{gradeResult.occupancyScore}%</strong>
-                    <span className="text-[9px] text-emerald-600 block mt-0.5 font-medium">✓ Passed (&gt; 55%)</span>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-[10px] text-stone-500 block">Gate Status</span>
-                    <strong className="font-semibold text-emerald-700 flex items-center justify-center gap-1 mt-0.5">
-                      <ShieldCheck className="w-3.5 h-3.5" /> All Checks Passed
+                {/* Product Summary */}
+                <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-stone-400 block text-[10px]">Crop &amp; Cultivar</span>
+                    <strong className="text-stone-900 font-semibold">
+                      {formData.crop} ({formData.variety})
                     </strong>
                   </div>
+                  <div>
+                    <span className="text-stone-400 block text-[10px]">Total Volume</span>
+                    <strong className="text-stone-900 font-semibold">
+                      {formData.quantity} {formData.unit}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-stone-400 block text-[10px]">Target Asking Price</span>
+                    <strong className="text-emerald-700 font-semibold">
+                      ₹{formData.askingPrice} / {formData.unit}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-stone-400 block text-[10px]">Hub Location</span>
+                    <strong className="text-stone-900 font-semibold">{formData.collectionHub}</strong>
+                  </div>
                 </div>
-              </div>
 
-              {/* Individual Parameters Breakdown */}
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                  Visual Parameters Assessed
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-stone-400 block text-[10px]">Diameter &amp; Size Uniformity</span>
-                    <strong className="text-stone-800">{gradeResult.parameters.sizeUniformity}</strong>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-stone-400 block text-[10px]">Surface Defect Ratio</span>
-                    <strong className="text-stone-800">{gradeResult.parameters.surfaceDefectsPct}%</strong>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-stone-400 block text-[10px]">Ripeness / Maturity Index</span>
-                    <strong className="text-stone-800">{gradeResult.parameters.ripenessIndex}</strong>
-                  </div>
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                    <span className="text-stone-400 block text-[10px]">Color Uniformity Score</span>
-                    <strong className="text-stone-800">{gradeResult.parameters.colorScore}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mandatory AI Disclaimer */}
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 text-xs text-amber-900 leading-relaxed">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                {/* Uploaded Photos Preview */}
                 <div>
-                  <p className="font-bold mb-0.5">Mandatory AI Vision Disclaimer:</p>
-                  <p>{gradeResult.disclaimer}</p>
+                  <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                    Multi-Angle Source Imagery ({uploadedPhotos.length} photos)
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {uploadedPhotos.map((img, i) => (
+                      <div
+                        key={img.id || i}
+                        className="aspect-square rounded-xl overflow-hidden bg-stone-100 border border-stone-200 relative"
+                      >
+                        <img
+                          src={img.imageUrl}
+                          alt={`Uploaded View ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] px-1 rounded font-mono">
+                          {img.category.replace("_VIEW", "")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
 
-            <CardFooter className="bg-stone-50 p-5 border-t border-stone-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full text-xs font-semibold rounded-xl border-stone-300 py-3 h-auto whitespace-normal flex items-center justify-center gap-2 hover:bg-stone-100 text-stone-700 shadow-xs"
-                onClick={() => handleSaveProduct("DRAFT")}
-              >
-                <Save className="w-4 h-4 shrink-0 text-stone-500" />
-                <span>Save as Draft Product</span>
-              </Button>
-              <Button
-                type="button"
-                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm py-3 h-auto whitespace-normal"
-                onClick={() => handleSaveProduct("SUBMIT_FPO")}
-              >
-                <PackageCheck className="w-4 h-4 shrink-0" />
-                <span>Submit for FPO Verification &amp; Pooling</span>
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
+                {/* Computer Vision Gate Telemetry */}
+                <div>
+                  <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                    OpenCV Quality Gate Validation
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-[10px] text-stone-500 block">Sharpness (Laplacian)</span>
+                      <strong className="font-semibold text-stone-800">
+                        {gradeResult.blurScore?.toFixed(1) ?? "0.0"}
+                      </strong>
+                      <span
+                        className={`text-[9px] block mt-0.5 font-medium ${
+                          gradeResult.blurPassed ? "text-emerald-600" : "text-rose-600 font-bold"
+                        }`}
+                      >
+                        {gradeResult.blurPassed ? "✓ Passed (> 75)" : "✕ Failed (Blurry)"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-[10px] text-stone-500 block">Illumination Index</span>
+                      <strong className="font-semibold text-stone-800">
+                        {gradeResult.brightnessScore?.toFixed(1) ?? "0.0"}
+                      </strong>
+                      <span
+                        className={`text-[9px] block mt-0.5 font-medium ${
+                          gradeResult.brightnessPassed ? "text-emerald-600" : "text-rose-600 font-bold"
+                        }`}
+                      >
+                        {gradeResult.brightnessPassed ? "✓ Passed (75-215)" : "✕ Failed (Exposure)"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-[10px] text-stone-500 block">Crate / Lot Framing</span>
+                      <strong className="font-semibold text-stone-800">
+                        {gradeResult.occupancyScore?.toFixed(1) ?? "0"}%
+                      </strong>
+                      <span
+                        className={`text-[9px] block mt-0.5 font-medium ${
+                          gradeResult.occupancyPassed ? "text-emerald-600" : "text-rose-600 font-bold"
+                        }`}
+                      >
+                        {gradeResult.occupancyPassed ? "✓ Passed (> 45%)" : "✕ Failed (< 45%)"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-[10px] text-stone-500 block">Gate Status</span>
+                      {allGatesPassed ? (
+                        <strong className="font-semibold text-emerald-700 flex items-center justify-center gap-1 mt-0.5">
+                          <ShieldCheck className="w-3.5 h-3.5" /> All Checks Passed
+                        </strong>
+                      ) : (
+                        <strong className="font-semibold text-rose-600 flex items-center justify-center gap-1 mt-0.5">
+                          <AlertCircle className="w-3.5 h-3.5" /> Gate Flagged
+                        </strong>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual Parameters Breakdown */}
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                    Visual Parameters Assessed
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px]">Diameter &amp; Size Uniformity</span>
+                      <strong className="text-stone-800">{gradeResult.parameters.sizeUniformity}</strong>
+                    </div>
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px]">Surface Defect Ratio</span>
+                      <strong className="text-stone-800">{gradeResult.parameters.surfaceDefectsPct}%</strong>
+                    </div>
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px]">Ripeness / Maturity Index</span>
+                      <strong className="text-stone-800">{gradeResult.parameters.ripenessIndex}</strong>
+                    </div>
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px]">Color Uniformity Score</span>
+                      <strong className="text-stone-800">{gradeResult.parameters.colorScore}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mandatory AI Disclaimer */}
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 text-xs text-amber-900 leading-relaxed">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold mb-0.5">Mandatory AI Vision Disclaimer:</p>
+                    <p>{gradeResult.disclaimer}</p>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="bg-stone-50 p-5 border-t border-stone-200 flex flex-col sm:flex-row gap-3">
+                {isRejected ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-1/2 text-xs font-semibold rounded-xl border-rose-300 text-rose-700 hover:bg-rose-50 py-3 h-auto flex items-center justify-center gap-2"
+                      onClick={() => setStep(2)}
+                    >
+                      <RotateCcw className="w-4 h-4 shrink-0 text-rose-600" />
+                      <span>Re-take / Re-upload Authentic Harvest Photos</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-1/2 text-xs font-semibold rounded-xl border-stone-300 py-3 h-auto flex items-center justify-center gap-2 hover:bg-stone-100 text-stone-700"
+                      onClick={() => handleSaveProduct("DRAFT")}
+                    >
+                      <Save className="w-4 h-4 shrink-0 text-stone-500" />
+                      <span>Save as Draft (Manual FPO Sorting Required)</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-1/2 text-xs font-semibold rounded-xl border-stone-300 py-3 h-auto whitespace-normal flex items-center justify-center gap-2 hover:bg-stone-100 text-stone-700 shadow-xs"
+                      onClick={() => handleSaveProduct("DRAFT")}
+                    >
+                      <Save className="w-4 h-4 shrink-0 text-stone-500" />
+                      <span>Save as Draft Product</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      className="w-full sm:w-1/2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm py-3 h-auto whitespace-normal"
+                      onClick={() => handleSaveProduct("SUBMIT_FPO")}
+                    >
+                      <PackageCheck className="w-4 h-4 shrink-0" />
+                      <span>Submit for FPO Verification &amp; Pooling</span>
+                    </Button>
+                  </>
+                )}
+              </CardFooter>
+            </Card>
+          </div>
+        );
+      })()}
     </div>
   );
 }

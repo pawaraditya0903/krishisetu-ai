@@ -97,11 +97,15 @@ export const apiClient = {
   vision: {
     analyzeImage: async (
       file: Blob | File,
-      cropName: string = "Tomato"
+      cropName: string = "Tomato",
+      clientTelemetry?: any
     ): Promise<ApiResponse<QualityAnalysisResult>> => {
       const formData = new FormData();
       formData.append("file", file, "harvest_photo.jpg");
       formData.append("crop_name", cropName);
+      if (clientTelemetry) {
+        formData.append("client_telemetry", JSON.stringify(clientTelemetry));
+      }
 
       try {
         const token = useAppStore.getState().currentUser?.accessToken;

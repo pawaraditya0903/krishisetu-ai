@@ -13,7 +13,7 @@ class ImageQualityGate:
     """
     
     @staticmethod
-    def evaluate_image(image_bytes: bytes) -> Dict[str, Any]:
+    def evaluate_image(image_bytes: bytes, crop: str = "Tomato") -> Dict[str, Any]:
         if not image_bytes or len(image_bytes) == 0:
             return {
                 "passed": False,
@@ -158,7 +158,22 @@ class ImageQualityGate:
         if not occupancy_passed:
             reasons.append("Crate or fruit takes less than 55% of the frame. Move closer to the harvest.")
 
-        passed_all = blur_passed and brightness_passed and occupancy_passed
+        produce_passed = True
+        if is_real_image and color_features is not None:
+            crop_clean = (crop or "Tomato").lower()
+            red_dom = color_features.get("red_dominance", 0.33)
+            green_dom = color_features.get("green_dominance", 0.33)
+            if "tomato" in crop_clean or "pomegranate" in crop_clean:
+                # If neither red nor green is dominant (e.g. grayscale document or black/grey suit)
+                if red_dom < 0.35 and green_dom < 0.35:
+                    produce_passed = False
+                    reasons.append(f"Non-agricultural subject detected: Image does not match visual characteristics of {crop}.")
+            elif "chilli" in crop_clean:
+                if green_dom < 0.35:
+                    produce_passed = False
+                    reasons.append(f"Non-agricultural subject detected: Image does not match visual characteristics of {crop}.")
+
+        passed_all = blur_passed and brightness_passed and occupancy_passed and produce_passed
 
         return {
             "passed": passed_all,
