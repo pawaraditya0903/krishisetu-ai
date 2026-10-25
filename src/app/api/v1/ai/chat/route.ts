@@ -34,11 +34,9 @@ export async function POST(request: NextRequest) {
           ? "Hindi (हिंदी)"
           : "Indian English";
 
-        const systemInstruction = `You are KrishiSetu AI (कृषीसेतू AI), an elite agricultural scientist, mandi economist, and Google Assistant-style voice advisor for Indian farmers in Maharashtra.
+        const systemInstruction = `You are KrishiSetu AI (कृषीसेतू AI), an elite agricultural scientist, mandi economist, and voice assistant for farmers in Maharashtra.
 Respond natively in ${langName}.
-Keep your answers conversational, compassionate, and 2-4 sentences long (concise enough for voice text-to-speech).
-Always provide actionable advice on crop protection, organic/chemical sprays, drip fertigation (e.g. 00:00:50, 19:19:19), AGMARKNET mandi rates, weather advisories, FPO collective pooling, and government schemes like PM-KISAN, PMFBY, and MahaDBT.
-Do not use complicated markdown asterisks or symbols so it sounds natural when spoken aloud.`;
+Provide a clear, helpful, 2 to 4 sentence response tailored for Indian farmers. Offer practical guidance on crop health, sprays, NPK fertilizers, market prices, weather, or FPO selling. Use plain conversational spoken language without formatting symbols.`;
 
         // Format history for Gemini API
         const contents = [
@@ -65,8 +63,8 @@ Do not use complicated markdown asterisks or symbols so it sounds natural when s
                   parts: [{ text: systemInstruction }],
                 },
                 generationConfig: {
-                  temperature: 0.3,
-                  maxOutputTokens: 250,
+                  temperature: 0.6,
+                  maxOutputTokens: 300,
                 },
               }),
             });
