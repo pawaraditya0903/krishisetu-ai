@@ -13,6 +13,10 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
+    env:
+      DATABASE_URL: "sqlite:///./krishisetu_local.db"
+      SQLITE_FALLBACK_URL: "sqlite:///./krishisetu_local.db"
+      USE_SQLITE_FALLBACK: "true"
 
     steps:
       - name: Checkout Code
