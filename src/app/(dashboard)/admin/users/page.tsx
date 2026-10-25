@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
     status: "Active" as UserStatus,
   });
 
-  // Form State for Add Other User (FPO, Buyer, Verifier, Admin)
+  // Form State for Add Other User (FPO, Buyer, Admin)
   const [otherUserForm, setOtherUserForm] = useState({
     name: "",
     role: "fpo" as Role,
@@ -293,8 +293,8 @@ export default function AdminUsersPage() {
           </div>
           <p className="text-slate-500 text-xs sm:text-sm">
             {isMr
-              ? "सर्व शेतकरी, एफपीओ व्यवस्थापक, खरेदीदार आणि अधिकाऱ्यांची थेट निर्मिती आणि व्यवस्थापन करा."
-              : "Live database of registered farmers, FPO managers, institutional buyers, and field verifiers."}
+              ? "सर्व शेतकरी, एफपीओ व्यवस्थापक, खरेदीदार आणि प्रशासकांची थेट निर्मिती आणि व्यवस्थापन करा."
+              : "Live database of registered farmers, FPO managers, institutional buyers, and platform administrators."}
           </p>
         </div>
 
@@ -308,7 +308,7 @@ export default function AdminUsersPage() {
             variant="outline"
             className="text-xs border-slate-300"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Add FPO / Buyer / Verifier
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add FPO / Buyer / Admin
           </Button>
           <Button
             size="sm"
@@ -322,12 +322,11 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Role Summary Counts */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { role: "farmer", label: isMr ? "शेतकरी" : "Farmers", count: users.filter((u) => u.role === "farmer").length, color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
           { role: "fpo", label: isMr ? "एफपीओ" : "FPOs", count: users.filter((u) => u.role === "fpo").length, color: "text-amber-700 bg-amber-50 border-amber-200" },
           { role: "buyer", label: isMr ? "खरेदीदार" : "Buyers", count: users.filter((u) => u.role === "buyer").length, color: "text-blue-700 bg-blue-50 border-blue-200" },
-          { role: "verifier", label: isMr ? "तपासणी अधिकारी" : "Verifiers", count: users.filter((u) => u.role === "verifier").length, color: "text-purple-700 bg-purple-50 border-purple-200" },
           { role: "admin", label: isMr ? "प्रशासक" : "Admins", count: users.filter((u) => u.role === "admin").length, color: "text-slate-700 bg-slate-100 border-slate-200" },
         ].map((item) => (
           <div
@@ -366,7 +365,6 @@ export default function AdminUsersPage() {
               <option value="farmer">Farmer</option>
               <option value="fpo">FPO Manager</option>
               <option value="buyer">Buyer</option>
-              <option value="verifier">Verifier</option>
               <option value="admin">Admin</option>
             </select>
 
@@ -433,8 +431,6 @@ export default function AdminUsersPage() {
                               ? "bg-amber-50 text-amber-800 border-amber-300"
                               : user.role === "buyer"
                               ? "bg-blue-50 text-blue-800 border-blue-300"
-                              : user.role === "verifier"
-                              ? "bg-purple-50 text-purple-800 border-purple-300"
                               : "bg-slate-100 text-slate-800 border-slate-300"
                           }`}
                         >
@@ -782,7 +778,7 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="font-bold text-base text-slate-900">Add Platform User (FPO / Buyer / Verifier / Admin)</h3>
+              <h3 className="font-bold text-base text-slate-900">Add Platform User (FPO / Buyer / Admin)</h3>
               <button
                 onClick={() => setIsAddOtherUserOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700"
@@ -813,7 +809,6 @@ export default function AdminUsersPage() {
                   >
                     <option value="fpo">FPO Manager</option>
                     <option value="buyer">Institutional Buyer</option>
-                    <option value="verifier">Field Verifier</option>
                     <option value="admin">Platform Administrator</option>
                   </select>
                 </div>

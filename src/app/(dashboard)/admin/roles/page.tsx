@@ -47,12 +47,12 @@ export default function AdminRolePermissionsPage() {
               {isMr ? "भूमिका आणि परवानग्या सुरक्षा मॅट्रिक्स" : "Role-Based Access Control (RBAC) Security Matrix"}
             </h1>
             <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 font-mono text-xs">
-              5 System Roles
+              4 System Roles
             </Badge>
           </div>
           <p className="text-slate-500 text-xs sm:text-sm">
             {isMr
-              ? "प्रत्येक भूमिकेसाठी (शेतकरी, एफपीओ, खरेदीदार, तपासणी अधिकारी, प्रशासक) प्रवेश परवानग्या नियंत्रित करा."
+              ? "प्रत्येक भूमिकेसाठी (शेतकरी, एफपीओ, खरेदीदार, प्रशासक) प्रवेश परवानग्या नियंत्रित करा."
               : "Enforce zero-trust granular permissions across portal capabilities and APIs."}
           </p>
         </div>

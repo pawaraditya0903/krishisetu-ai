@@ -18,7 +18,6 @@ const OFFICIAL_PORTAL_ACCOUNTS: PortalUserAccount[] = [
   { id: "F1", name: "Ramesh Patil", role: "farmer", location: "Baramati Cluster, Pune", phone: "9822100011", organization: "Registered Progressive Farmer", defaultPassword: "demo_password", status: "Active", createdAt: "2026-01-15T00:00:00Z" },
   { id: "FPO1", name: "Saksham FPO", role: "fpo", location: "Baramati Krushi Producer Company", phone: "9422088990", organization: "Verified FPO Hub (MSAMB Partner)", defaultPassword: "demo_password", status: "Active", createdAt: "2025-11-20T00:00:00Z" },
   { id: "B1", name: "FreshMart Foods Pvt. Ltd.", role: "buyer", location: "Hadapsar Hub, Pune APMC", phone: "0202687400", organization: "Certified Institutional Buyer", defaultPassword: "demo_password", status: "Active", createdAt: "2026-03-05T00:00:00Z" },
-  { id: "V1", name: "Kailash Jadhav", role: "verifier", location: "Parbhani & Pune Quality Cell", phone: "9822100033", organization: "Certified Agricultural Quality Inspector", defaultPassword: "demo_password", status: "Active", createdAt: "2026-02-10T00:00:00Z" },
   { id: "A1", name: "KrishiSetu National Admin", role: "admin", location: "State Agricultural Operations Center", phone: "0202555123", organization: "State Portal & Nodal Authority", defaultPassword: "demo_password", status: "Active", createdAt: "2025-10-01T00:00:00Z" }
 ];
 
