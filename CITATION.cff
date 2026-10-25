@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you utilize KrishiSetu AI in your agricultural research, logistics optimization studies, or Smart India Hackathon benchmarks, please cite it as below."
+authors:
+  - family-names: "Pawar"
+    given-names: "Aditya"
+    alias: "pawaraditya0903"
+title: "KrishiSetu AI: Autonomous Agricultural Market Linkage, True Net Realization & FPO Logistics Aggregator"
+version: 2.5.0
+date-released: 2026-03-15
+url: "https://github.com/pawaraditya0903/krishisetu-ai"
+repository-code: "https://github.com/pawaraditya0903/krishisetu-ai"
+keywords:
+  - "agritech"
+  - "smart-india-hackathon"
+  - "logistics-optimization"
+  - "cvrptw"
+  - "price-forecasting"
+  - "fastapi"
+  - "nextjs"
+license: MIT

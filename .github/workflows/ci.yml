@@ -59,7 +59,7 @@ jobs:
         run: npm ci
 
       - name: Run Platform Tests
-        run: node test-admin-features.mjs
+        run: node scripts/test-admin-features.mjs
 
       - name: TypeScript Typecheck
         run: npx tsc --noEmit
