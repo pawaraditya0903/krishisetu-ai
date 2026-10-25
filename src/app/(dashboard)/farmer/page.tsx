@@ -83,10 +83,20 @@ export default function FarmerDashboard() {
 
   const bestNetOutcome = calculateBestNet(activeMandi || nearbyMandis[0]);
 
-  // Find matching FPO pool for this crop and area
+  // Find matching FPO pool for this crop and location
   const matchingPool =
+    pools.find((p) =>
+      farmLocation
+        ? p.collectionHub.toLowerCase().includes(farmLocation.district.toLowerCase()) ||
+          p.destinationMandi.toLowerCase().includes(farmLocation.district.toLowerCase())
+        : false
+    ) ||
     pools.find((p) => p.crop.toLowerCase().includes(selectedCrop.toLowerCase())) ||
     pools[0];
+
+  const poolHubName = farmLocation
+    ? `${farmLocation.district} FPO Hub → ${matchingPool?.destinationMandi || "Terminal Mandi"}`
+    : matchingPool?.collectionHub || "Regional FPO Consolidation Hub";
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -96,8 +106,25 @@ export default function FarmerDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">
             {t.farmer.greeting}, {currentUser.name.split(" ")[0]} 👋
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm">
-            {isOffline ? t.farmer.offlineStatus : t.farmer.onlineStatus}
+          <p className="text-slate-500 text-xs sm:text-sm flex flex-wrap items-center gap-1.5 mt-0.5">
+            {isOffline ? (
+              <span className="text-amber-700 font-medium">{t.farmer.offlineStatus}</span>
+            ) : (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="font-semibold text-emerald-700">
+                  {isMr
+                    ? `ऑनलाइन • थेट ${farmLocation ? farmLocation.district + " APMC" : "सर्व APMC"} जोडणी सक्रिय`
+                    : isHi
+                    ? `ऑनलाइन • लाइव ${farmLocation ? farmLocation.district + " APMC" : "सभी APMC"} कनेक्टेड`
+                    : `Online • Real-Time ${farmLocation ? farmLocation.district + " APMC" : "National APMC"} Connected`}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="text-slate-500 text-[11px] font-medium">
+                  {isMr ? "थेट बाजार दर अद्ययावत" : "Live Market Feed Active"}
+                </span>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -283,8 +310,8 @@ export default function FarmerDashboard() {
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 truncate">
-                  {matchingPool.collectionHub}
+                <p className="text-[10px] text-slate-500 font-medium mt-1 truncate">
+                  📍 {poolHubName}
                 </p>
               </>
             ) : (

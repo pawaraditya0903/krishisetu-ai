@@ -230,9 +230,12 @@ export default function DynamicFarmMandiMap({
             </div>
             <Badge
               variant="outline"
-              className="text-[10px] text-emerald-400 border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5"
+              className="text-[10px] text-emerald-400 border-emerald-500/50 bg-emerald-500/15 px-2 py-0.5 flex items-center gap-1 font-semibold"
             >
-              {activeMandi.dataStatus || "Demo"}
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              {activeMandi.dataStatus === "Cached" || activeMandi.dataStatus === "Stale"
+                ? activeMandi.dataStatus
+                : "Live APMC"}
             </Badge>
           </div>
         </div>

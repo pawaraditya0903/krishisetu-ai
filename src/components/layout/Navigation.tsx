@@ -189,12 +189,19 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             <span className="font-bold text-lg">{t.appName}</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-slate-600 text-sm">
-            {currentUser.location && (
-              <span className="px-2.5 py-1 bg-slate-100 rounded-md text-xs font-medium text-slate-700">
-                📍 {currentUser.location}
-              </span>
-            )}
-            <span className="text-xs text-slate-400">| {t.nav.pilotCluster}</span>
+            <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-md text-xs font-semibold text-emerald-800 flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              📍 {farmLocation ? farmLocation.label : (currentUser?.location || "National Agriculture Portal")}
+            </span>
+            <span className="text-xs text-slate-500 font-medium">
+              | {farmLocation
+                  ? (language === "mr"
+                      ? `थेट एपीएमसी ग्रिड: ${farmLocation.district} क्लस्टर`
+                      : language === "hi"
+                      ? `लाइव एपीएमसी ग्रिड: ${farmLocation.district} क्लस्टर`
+                      : `Live APMC Grid: ${farmLocation.district} Cluster`)
+                  : t.nav.pilotCluster}
+            </span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

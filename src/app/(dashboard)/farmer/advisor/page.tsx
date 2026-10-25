@@ -30,7 +30,7 @@ const FORECAST_DATA: ForecastPoint[] = [
 ];
 
 export default function SaleAdvisorPage() {
-  const { language } = useAppStore();
+  const { language, farmLocation } = useAppStore();
   const t = translations[language] || translations.en;
   const [riskPreference, setRiskPreference] = useState<"conservative" | "balanced" | "growth">("balanced");
 
@@ -39,7 +39,10 @@ export default function SaleAdvisorPage() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t.advisor.title}</h1>
-          <p className="text-slate-500 text-sm">{t.advisor.subtitle}</p>
+          <p className="text-slate-500 text-sm">
+            {farmLocation ? <span className="font-semibold text-emerald-700 mr-1.5">📍 {farmLocation.district} Cluster:</span> : null}
+            {t.advisor.subtitle}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-medium">{t.advisor.riskLabel}</span>
