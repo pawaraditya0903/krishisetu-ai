@@ -274,7 +274,8 @@ def verify_crop_lot(
         entity_id=lot_id,
         details=f"Weight verified: {verify_data.verified_weight_kg}kg, Grade: {verify_data.verified_grade}. Notes: {verify_data.fpo_notes or 'Standard verification'}",
         actor_name=user.get("name", "Saksham FPO Manager"),
-        actor_role=user.get("role", "FPO_MANAGER")
+        actor_role=user.get("role", "FPO_MANAGER"),
+        db=db
     )
 
     try:
@@ -287,7 +288,8 @@ def verify_crop_lot(
             entity_id=audit_rec["entity_id"],
             details=audit_rec["details"],
             prev_hash=audit_rec["prev_hash"],
-            hash=audit_rec["hash"]
+            hash=audit_rec["hash"],
+            timestamp=datetime.fromisoformat(audit_rec["timestamp"]) if isinstance(audit_rec["timestamp"], str) else audit_rec["timestamp"]
         )
         db.add(db_event)
         db.commit()
@@ -1512,7 +1514,8 @@ def get_audit_trail(db: Session = Depends(get_db)):
                 entity_id=ev["entity_id"],
                 details=ev["details"],
                 prev_hash=ev["prev_hash"],
-                hash=ev["hash"]
+                hash=ev["hash"],
+                timestamp=datetime.fromisoformat(ev["timestamp"]) if isinstance(ev["timestamp"], str) else ev["timestamp"]
             )
             db.add(db_ev)
             db.commit()

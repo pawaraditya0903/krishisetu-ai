@@ -13,38 +13,42 @@ from app.api.v1.router import api_router
 # Create database tables automatically on startup
 Base.metadata.create_all(bind=engine)
 
+from sqlalchemy import inspect
+
 def auto_migrate_schema():
-    with engine.connect() as conn:
-        try:
-            res = conn.execute(text("PRAGMA table_info(crop_lots)"))
-            existing_cols = {row[1] for row in res.fetchall()}
-            needed_cols = [
-                ("crop_id", "VARCHAR(36)"),
-                ("unit", "VARCHAR(20) DEFAULT 'kg'"),
-                ("harvest_date", "VARCHAR(30)"),
-                ("packaging_type", "VARCHAR(100)"),
-                ("location_id", "VARCHAR(100)"),
-                ("location_name", "VARCHAR(255)"),
-                ("notes", "TEXT"),
-                ("product_status", "VARCHAR(50) DEFAULT 'DRAFT'"),
-                ("marketplace_visibility", "VARCHAR(30) DEFAULT 'PRIVATE'"),
-                ("cover_image_id", "VARCHAR(36)"),
-                ("cover_image_url", "VARCHAR(255)"),
-                ("ai_grade", "VARCHAR(20)"),
-                ("ai_quality_score", "FLOAT"),
-                ("ai_confidence", "VARCHAR(20)"),
-                ("fpo_verified_grade", "VARCHAR(20)"),
-                ("asking_price_paise", "INTEGER"),
-                ("buyer_id", "VARCHAR(36)"),
-                ("archived_at", "DATETIME"),
-                ("deleted_at", "DATETIME"),
-            ]
+    try:
+        inspector = inspect(engine)
+        if not inspector.has_table("crop_lots"):
+            return
+        existing_cols = {col["name"] for col in inspector.get_columns("crop_lots")}
+        needed_cols = [
+            ("crop_id", "VARCHAR(36)"),
+            ("unit", "VARCHAR(20) DEFAULT 'kg'"),
+            ("harvest_date", "VARCHAR(30)"),
+            ("packaging_type", "VARCHAR(100)"),
+            ("location_id", "VARCHAR(100)"),
+            ("location_name", "VARCHAR(255)"),
+            ("notes", "TEXT"),
+            ("product_status", "VARCHAR(50) DEFAULT 'DRAFT'"),
+            ("marketplace_visibility", "VARCHAR(30) DEFAULT 'PRIVATE'"),
+            ("cover_image_id", "VARCHAR(36)"),
+            ("cover_image_url", "VARCHAR(255)"),
+            ("ai_grade", "VARCHAR(20)"),
+            ("ai_quality_score", "FLOAT"),
+            ("ai_confidence", "VARCHAR(20)"),
+            ("fpo_verified_grade", "VARCHAR(20)"),
+            ("asking_price_paise", "INTEGER"),
+            ("buyer_id", "VARCHAR(36)"),
+            ("archived_at", "DATETIME"),
+            ("deleted_at", "DATETIME"),
+        ]
+        with engine.connect() as conn:
             for col_name, col_type in needed_cols:
                 if col_name not in existing_cols:
                     conn.execute(text(f"ALTER TABLE crop_lots ADD COLUMN {col_name} {col_type}"))
             conn.commit()
-        except Exception:
-            pass
+    except Exception:
+        pass
 
 auto_migrate_schema()
 

@@ -145,7 +145,8 @@ export default function BuyerProductDetailPage({ params }: { params: Promise<{ i
 
   const unit = product.unit || "kg";
   const pricePerUnit = product.askingPricePerQtl || (product.askingPricePaise ? product.askingPricePaise / 100 : 2200);
-  const estTotalValue = Math.round((product.quantityKg / (unit === "quintal" ? 100 : 1)) * pricePerUnit);
+  const quantityQtl = unit === "quintal" ? product.quantityKg : product.quantityKg / 100;
+  const estTotalValue = Math.round(quantityQtl * pricePerUnit);
 
   const handleConfirmOrder = async () => {
     setOrderProcessing(true);

@@ -41,7 +41,7 @@ def reset_test_state():
             pool.current_kg = 650.0
             db.commit()
         if clean_event_ids:
-            db.query(AuditEvent).filter(AuditEvent.id.notin(clean_event_ids)).delete(synchronize_session=False)
+            db.query(AuditEvent).filter(~AuditEvent.id.in_(clean_event_ids)).delete(synchronize_session=False)
             db.commit()
         last_evt = db.query(AuditEvent).order_by(AuditEvent.timestamp.desc()).first()
         if last_evt:
