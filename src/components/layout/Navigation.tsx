@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Users,
   ShoppingCart,
+  Package,
   FileText,
   CheckSquare,
   Truck,
@@ -101,7 +102,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       { name: t.nav.marketPrices, href: "/farmer/market", icon: LineChart },
       { name: t.nav.saleAdvisor, href: "/farmer/advisor", icon: TrendingUp },
       { name: t.nav.pooling, href: "/farmer/pooling", icon: Users },
-      { name: t.nav.myOrders, href: "/farmer/orders", icon: ShoppingCart },
+      { name: t.nav.myProducts || t.nav.myOrders || "My Products", href: "/farmer/products", icon: Package },
       { name: t.nav.settlement, href: "/farmer/settlement", icon: FileText },
     ],
     fpo: [

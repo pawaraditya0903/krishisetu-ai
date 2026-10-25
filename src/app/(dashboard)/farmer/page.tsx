@@ -392,9 +392,9 @@ export default function FarmerDashboard() {
               <CardTitle className="text-base font-bold">{t.farmer.recentLots}</CardTitle>
               <CardDescription className="text-xs">{t.farmer.lotsDescription}</CardDescription>
             </div>
-            <Link href="/farmer/orders">
-              <Button variant="ghost" size="sm" className="text-xs text-emerald-700">
-                {t.farmer.viewAllOrders}
+            <Link href="/farmer/products">
+              <Button variant="ghost" size="sm" className="text-xs text-emerald-700 font-semibold">
+                {t.nav.myProducts} →
               </Button>
             </Link>
           </CardHeader>

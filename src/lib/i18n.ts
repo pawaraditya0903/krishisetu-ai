@@ -15,6 +15,7 @@ export interface Translations {
     saleAdvisor: string;
     pooling: string;
     myOrders: string;
+    myProducts: string;
     settlement: string;
     verifyLots: string;
     poolManagement: string;
@@ -289,7 +290,8 @@ export const translations: Record<Language, Translations> = {
       marketPrices: "Market Prices",
       saleAdvisor: "Sale Advisor",
       pooling: "Pooling",
-      myOrders: "My Orders",
+      myOrders: "My Products",
+      myProducts: "My Products",
       settlement: "Settlement",
       verifyLots: "Verify Lots",
       poolManagement: "Pool Management",
@@ -589,7 +591,8 @@ export const translations: Record<Language, Translations> = {
       marketPrices: "बाजारभाव व नफा",
       saleAdvisor: "विक्री सल्लागार",
       pooling: "एकत्रित विक्री (पूल)",
-      myOrders: "माझे ऑर्डर्स",
+      myOrders: "माझी उत्पादने",
+      myProducts: "माझी उत्पादने",
       settlement: "हिशोब व पावती",
       verifyLots: "लॉट पडताळणी",
       poolManagement: "पूल व्यवस्थापन",
@@ -889,7 +892,8 @@ export const translations: Record<Language, Translations> = {
       marketPrices: "मंडी भाव एवं मुनाफा",
       saleAdvisor: "बिक्री सलाहकार",
       pooling: "पूलिंग (समूह)",
-      myOrders: "मेरे ऑर्डर्स",
+      myOrders: "मेरे उत्पाद",
+      myProducts: "मेरे उत्पाद",
       settlement: "भुगतान रसीद",
       verifyLots: "लॉट सत्यापन",
       poolManagement: "पूल प्रबंधन",

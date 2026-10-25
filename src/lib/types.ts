@@ -55,6 +55,64 @@ export type LotStatus =
   | "Disputed"
   | "Paid";
 
+export type ProductStatus =
+  | "DRAFT"
+  | "PHOTOS_UPLOADED"
+  | "UNDER_ANALYSIS"
+  | "NEEDS_REUPLOAD"
+  | "ANALYSIS_COMPLETE"
+  | "AWAITING_FPO_VERIFICATION"
+  | "FPO_VERIFIED"
+  | "REJECTED"
+  | "PUBLISHED"
+  | "UNPUBLISHED"
+  | "POOL_REQUESTED"
+  | "IN_POOL"
+  | "BUYER_RESERVED"
+  | "DISPATCHED"
+  | "DELIVERED"
+  | "SOLD"
+  | "WITHDRAWN"
+  | "ARCHIVED"
+  | "DELETED";
+
+export type PhotoCategory = "TOP_VIEW" | "SIDE_VIEW" | "LOT_VIEW" | "OTHER";
+
+export interface ProductImageItem {
+  id: string;
+  productId?: string;
+  farmerId: string;
+  cropId?: string;
+  imageUrl: string;
+  storageKey: string;
+  category: PhotoCategory;
+  displayOrder: number;
+  uploadedAt: string;
+  fileType: string;
+  fileSize: number;
+}
+
+export interface ProductStatusHistoryItem {
+  id: string;
+  oldStatus?: string;
+  newStatus: string;
+  changedBy?: string;
+  changedAt: string;
+  reason?: string;
+}
+
+export interface CropAddRequest {
+  id: string;
+  farmerId: string;
+  farmerName?: string;
+  requestedCropName: string;
+  variety?: string;
+  category?: string;
+  reason?: string;
+  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  createdAt: string;
+}
+
 export interface QualityAnalysisResult {
   blurScore: number; // Laplacian variance
   blurPassed: boolean;
@@ -84,20 +142,44 @@ export interface CropLot {
   id: string;
   farmerId: string;
   farmerName: string;
+  cropId?: string;
   crop: string;
   variety: string;
   quantityKg: number;
+  unit?: string; // "kg" | "quintal" | "crates" | "metric_ton"
+  harvestDate?: string;
+  packagingType?: string;
+  locationId?: string;
+  locationName?: string;
+  notes?: string;
+  productStatus?: ProductStatus;
+  status: LotStatus;
+  marketplaceVisibility?: "PRIVATE" | "PUBLIC" | "UNLISTED";
+  coverImageId?: string;
+  coverImageUrl?: string;
   grade: CropGrade;
   confidenceScore?: number;
-  status: LotStatus;
+  aiGrade?: string;
+  aiQualityScore?: number;
+  aiConfidence?: string;
+  fpoVerifiedGrade?: CropGrade;
+  askingPricePerQtl?: number;
+  askingPricePaise?: number;
   createdAt: string;
+  updatedAt?: string;
+  archivedAt?: string;
+  deletedAt?: string;
   images: string[];
+  productImages?: ProductImageItem[];
   poolId?: string;
+  buyerId?: string;
+  buyerName?: string;
   qrCode?: string;
   verifiedWeightKg?: number;
   verifiedGrade?: CropGrade;
   fpoNotes?: string;
   analysis?: QualityAnalysisResult;
+  statusHistory?: ProductStatusHistoryItem[];
 }
 
 export interface FarmLocation {
@@ -354,6 +436,8 @@ export interface CropCatalogItem {
   perishability: "Very High (1-3 days)" | "High (4-7 days)" | "Medium (1-3 weeks)" | "Low (Months)";
   storageRecommendation: string;
   defaultBatchSizeKg: number;
+  unit?: string; // "kg" | "quintal" | "crates"
+  supportedQualityParams?: string[];
   gradeRules: CropGradeRule[];
   status: "Active" | "Inactive";
 }

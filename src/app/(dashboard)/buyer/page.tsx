@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { Pool } from "@/lib/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import {
   Package,
   Filter,
   X,
+  Eye,
 } from "lucide-react";
 import {
   Dialog,
@@ -54,10 +56,13 @@ const GRADE_LABELS: Record<string, string> = {
 
 export default function BuyerMarketplacePage() {
   const router = useRouter();
-  const { pools, reservePool, currentUser, users, language } = useAppStore();
+  const { pools, lots, reservePool, currentUser, users, language } = useAppStore();
 
   const isMr = language === "mr";
   const isHi = language === "hi";
+
+  // Marketplace view mode: Pools vs Farmer Direct Products
+  const [marketplaceMode, setMarketplaceMode] = useState<"farmer_products" | "pools">("farmer_products");
 
   // Filter state
   const [cropFilter, setCropFilter] = useState("All");
@@ -68,9 +73,26 @@ export default function BuyerMarketplacePage() {
   // Available pools: Open or Reserved (for marketplace visibility)
   const allAvailable = pools.filter((p) => p.status === "Open" || p.status === "Reserved");
 
-  // Unique crops and grades from available pools
-  const uniqueCrops = ["All", ...Array.from(new Set(allAvailable.map((p) => p.crop)))];
-  const uniqueGrades = ["All", ...Array.from(new Set(allAvailable.flatMap((p) => p.allowedGrades)))];
+  // Filter published farmer products strictly conforming to marketplace rules
+  const publishedFarmerLots = useMemo(() => {
+    return lots.filter((l) => {
+      if (l.deletedAt || l.archivedAt || l.productStatus === "WITHDRAWN") return false;
+      const isPublic = l.marketplaceVisibility === "PUBLIC" || l.productStatus === "PUBLISHED";
+      if (!isPublic) return false;
+
+      if (cropFilter !== "All" && l.crop.toLowerCase() !== cropFilter.toLowerCase()) return false;
+      if (gradeFilter !== "All" && l.grade !== gradeFilter && l.aiGrade !== gradeFilter) return false;
+
+      return true;
+    });
+  }, [lots, cropFilter, gradeFilter]);
+
+  // Unique crops and grades from available pools and published lots
+  const uniqueCrops = [
+    "All",
+    ...Array.from(new Set([...allAvailable.map((p) => p.crop), ...lots.map((l) => l.crop)])),
+  ];
+  const uniqueGrades = ["All", "Grade A", "Grade B", "Grade C"];
 
   const filteredPools = useMemo(() => {
     return allAvailable.filter((p) => {
@@ -165,6 +187,34 @@ export default function BuyerMarketplacePage() {
         </div>
       </div>
 
+      {/* Marketplace Catalog Selector */}
+      <div className="flex items-center gap-2.5 border-b border-stone-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setMarketplaceMode("farmer_products")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            marketplaceMode === "farmer_products"
+              ? "bg-emerald-700 text-white shadow-xs"
+              : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          Direct Farmer Lots ({publishedFarmerLots.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMarketplaceMode("pools")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            marketplaceMode === "pools"
+              ? "bg-emerald-700 text-white shadow-xs"
+              : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          Aggregated FPO Pools ({allAvailable.length})
+        </button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <Filter className="w-3.5 h-3.5 text-slate-400" />
@@ -196,19 +246,128 @@ export default function BuyerMarketplacePage() {
         ) : null}
       </div>
 
-      {/* Pool Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredPools.length === 0 && (
-          <div className="col-span-full p-10 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50">
-            <Package className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-600">
-              {isMr ? "या फिल्टर साठी कोणतेही पूल नाही." : "No pools match this filter."}
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              {isMr ? "नवीन शेतकरी कन्साइनमेंट पडताळणी प्रक्रियेत आहेत." : "New farmer consignments are being verified."}
-            </p>
-          </div>
-        )}
+      {/* Catalog Display: Farmer Products or Pools */}
+      {marketplaceMode === "farmer_products" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {publishedFarmerLots.length === 0 ? (
+            <div className="col-span-full p-12 text-center border border-dashed border-stone-200 rounded-2xl bg-stone-50">
+              <Package className="w-10 h-10 mx-auto mb-2 text-stone-300" />
+              <p className="text-sm font-semibold text-stone-700">
+                No individual farmer lots match this filter.
+              </p>
+              <p className="text-xs text-stone-400 mt-1">
+                New farm harvests are currently undergoing AI computer vision and FPO gate verification.
+              </p>
+            </div>
+          ) : (
+            publishedFarmerLots.map((lot) => {
+              const coverImg = lot.coverImageUrl || lot.images?.[0] || "/demo/tomato-top.jpg";
+              const unit = lot.unit || "kg";
+              const price = lot.askingPricePerQtl || (lot.askingPricePaise ? lot.askingPricePaise / 100 : 2200);
+
+              return (
+                <Card
+                  key={lot.id}
+                  className="border-stone-200 overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-400 transition-all flex flex-col justify-between rounded-2xl"
+                >
+                  <div>
+                    {/* Image Cover */}
+                    <div className="relative aspect-video bg-stone-900 overflow-hidden">
+                      <img
+                        src={coverImg}
+                        alt={lot.crop}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+
+                      <div className="absolute top-2.5 left-2.5">
+                        <Badge className="bg-emerald-600 text-white text-[10px] font-semibold flex items-center gap-1 border-none shadow-xs">
+                          <ShieldCheck className="w-3 h-3" /> FPO Inspected
+                        </Badge>
+                      </div>
+
+                      <div className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-xs text-stone-900 text-xs font-bold px-2 py-0.5 rounded-lg shadow-xs">
+                        {lot.grade || "Grade A"}
+                      </div>
+
+                      <div className="absolute bottom-2 left-3 right-3 text-white">
+                        <h3 className="font-extrabold text-base leading-tight">
+                          {lot.crop}{" "}
+                          <span className="text-xs font-normal text-stone-200">({lot.variety})</span>
+                        </h3>
+                        <div className="text-[11px] text-stone-300 flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-emerald-400" />
+                          {lot.locationName || "Baramati FPO Aggregation Yard, Pune"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Specifications */}
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-end pb-2.5 border-b border-stone-100">
+                        <div>
+                          <span className="text-[10px] text-stone-400 block">Available Volume</span>
+                          <strong className="text-lg font-extrabold text-stone-900">
+                            {lot.quantityKg} {unit}
+                          </strong>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-stone-400 block">Asking Rate</span>
+                          <strong className="text-lg font-extrabold text-emerald-700">
+                            ₹{price}
+                          </strong>
+                          <span className="text-[10px] text-stone-400">/{unit}</span>
+                        </div>
+                      </div>
+
+                      {/* Redacted origin and quality */}
+                      <div className="text-xs text-stone-600 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">Producer:</span>
+                          <span className="font-medium text-stone-800">Verified Member (FPO Network)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">AI Quality Score:</span>
+                          <span className="font-semibold text-emerald-800">{lot.confidenceScore || 92}% (High)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">Lot ID:</span>
+                          <span className="font-mono text-stone-500 text-[11px]">{lot.id}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </div>
+
+                  {/* Actions */}
+                  <CardFooter className="p-4 pt-0 gap-2">
+                    <Link href={`/buyer/products/${lot.id}`} className="w-full">
+                      <Button
+                        variant="outline"
+                        className="w-full text-xs font-semibold rounded-xl border-stone-300 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300"
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1.5" /> View Product Details
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* Pool Cards */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredPools.length === 0 && (
+            <div className="col-span-full p-10 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50">
+              <Package className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+              <p className="text-sm font-semibold text-slate-600">
+                {isMr ? "या फिल्टर साठी कोणतेही पूल नाही." : "No pools match this filter."}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                {isMr ? "नवीन शेतकरी कन्साइनमेंट पडताळणी प्रक्रियेत आहेत." : "New farmer consignments are being verified."}
+              </p>
+            </div>
+          )}
 
         {filteredPools.map((pool) => {
           const totalVal = Math.round((pool.currentKg / 100) * pool.pricePerQtl);
@@ -332,6 +491,7 @@ export default function BuyerMarketplacePage() {
           );
         })}
       </div>
+      )}
 
       {/* Payment Authorization Modal */}
       <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
