@@ -3,7 +3,7 @@
 import Navigation from "@/components/layout/Navigation";
 import { useSyncExternalStore, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const emptySubscribe = () => () => {};
 
@@ -19,7 +19,6 @@ export default function DashboardLayout({
   );
   const currentUser = useAppStore((state) => state.currentUser);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (isMounted && !currentUser) {

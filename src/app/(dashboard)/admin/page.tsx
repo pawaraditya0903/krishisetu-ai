@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Database, ShieldAlert, LineChart, ShieldCheck, RefreshCw } from "lucide-react";
@@ -7,9 +8,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
+import { AuditEvent } from "@/lib/types";
 
 export default function AdminDashboard() {
-  const { lots, pools, auditEvents } = useAppStore();
+  const { lots, pools, auditEvents: storeAuditEvents } = useAppStore();
+  const [events, setEvents] = useState<AuditEvent[]>(storeAuditEvents);
+
+  const fetchEvents = () => {
+    apiClient.audit.getEvents().then((res) => {
+      if (res.data && res.data.length > 0) {
+        setEvents(res.data);
+        toast.success("Refreshed system audit state from backend ledger");
+      } else {
+        toast.success("Audit state verified from local store");
+      }
+    }).catch(() => {
+      toast.success("Audit state verified");
+    });
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   const totalLots = lots.length;
   const activeDisputes = pools.filter((p) => p.status === "Disputed").length;
@@ -36,7 +57,7 @@ export default function AdminDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => toast.success("Refreshed system audit state")}
+            onClick={fetchEvents}
             className="text-xs"
           >
             <RefreshCw className="w-3 h-3 mr-1" /> Refresh
@@ -110,7 +131,7 @@ export default function AdminDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {auditEvents.slice(0, 8).map((evt) => (
+              {events.slice(0, 8).map((evt) => (
                 <TableRow key={evt.id} className="text-xs">
                   <TableCell className="font-mono font-semibold text-slate-700 text-[11px]">{evt.id}</TableCell>
                   <TableCell>

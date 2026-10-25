@@ -54,6 +54,8 @@ interface AppState {
     details: string
   ) => void;
 
+  fetchRealTimeMandiPrices: (crop?: string, mandi?: string) => Promise<void>;
+
   resetDemoData: () => void;
 }
 
@@ -184,11 +186,12 @@ const initialPools: Pool[] = [
 ];
 
 const initialMandiPrices: MandiPrice[] = [
+  // Tomato
   {
     id: "M1",
     mandi: "Baramati APMC",
     crop: "Tomato",
-    variety: "Hybrid",
+    variety: "Abhinav (Hybrid)",
     minPrice: 1650,
     modalPrice: 1850,
     maxPrice: 2000,
@@ -202,7 +205,7 @@ const initialMandiPrices: MandiPrice[] = [
     id: "M2",
     mandi: "Pune Gultekdi Market Yard",
     crop: "Tomato",
-    variety: "Hybrid",
+    variety: "Abhinav (Hybrid)",
     minPrice: 1800,
     modalPrice: 2150,
     maxPrice: 2350,
@@ -225,6 +228,310 @@ const initialMandiPrices: MandiPrice[] = [
     updatedAt: "2026-09-08T05:45:00Z",
     freshness: "Fresh (Today)",
     source: "Solapur Market Committee",
+  },
+  {
+    id: "M4",
+    mandi: "Mumbai Vashi APMC",
+    crop: "Tomato",
+    variety: "Hybrid Superior",
+    minPrice: 2100,
+    modalPrice: 2450,
+    maxPrice: 2700,
+    arrivalsQtl: 2200,
+    distanceKm: 240,
+    updatedAt: "2026-09-08T06:15:00Z",
+    freshness: "Fresh (Today)",
+    source: "MSAMB Terminal Yard Bulletin",
+  },
+  {
+    id: "M5",
+    mandi: "Kolhapur APMC",
+    crop: "Tomato",
+    variety: "Local Desi",
+    minPrice: 1550,
+    modalPrice: 1800,
+    maxPrice: 1950,
+    arrivalsQtl: 560,
+    distanceKm: 215,
+    updatedAt: "2026-09-08T06:00:00Z",
+    freshness: "Fresh (Today)",
+    source: "Kolhapur APMC Board",
+  },
+  {
+    id: "M5B",
+    mandi: "Nashik APMC",
+    crop: "Tomato",
+    variety: "Hybrid 1057",
+    minPrice: 1750,
+    modalPrice: 2100,
+    maxPrice: 2300,
+    arrivalsQtl: 1800,
+    distanceKm: 210,
+    updatedAt: "2026-09-08T06:10:00Z",
+    freshness: "Fresh (Today)",
+    source: "Nashik APMC Committee",
+  },
+
+  // Onion
+  {
+    id: "M6",
+    mandi: "Lasalgaon APMC",
+    crop: "Onion",
+    variety: "Unhali / Summer",
+    minPrice: 3800,
+    modalPrice: 4250,
+    maxPrice: 4650,
+    arrivalsQtl: 3400,
+    distanceKm: 230,
+    updatedAt: "2026-09-08T06:00:00Z",
+    freshness: "Fresh (Today)",
+    source: "Lasalgaon Main Yard Bulletin",
+  },
+  {
+    id: "M7",
+    mandi: "Pune Gultekdi Market Yard",
+    crop: "Onion",
+    variety: "Red Garva",
+    minPrice: 3950,
+    modalPrice: 4400,
+    maxPrice: 4800,
+    arrivalsQtl: 1850,
+    distanceKm: 92,
+    updatedAt: "2026-09-08T06:30:00Z",
+    freshness: "Fresh (Today)",
+    source: "MSAMB Daily Price Index",
+  },
+  {
+    id: "M8",
+    mandi: "Ahmednagar APMC",
+    crop: "Onion",
+    variety: "Red Regular",
+    minPrice: 3700,
+    modalPrice: 4150,
+    maxPrice: 4500,
+    arrivalsQtl: 2100,
+    distanceKm: 140,
+    updatedAt: "2026-09-08T05:50:00Z",
+    freshness: "Fresh (Today)",
+    source: "APMC Ahmednagar",
+  },
+  {
+    id: "M9",
+    mandi: "Baramati APMC",
+    crop: "Onion",
+    variety: "Unhali Red",
+    minPrice: 3650,
+    modalPrice: 4100,
+    maxPrice: 4450,
+    arrivalsQtl: 620,
+    distanceKm: 12,
+    updatedAt: "2026-09-08T06:10:00Z",
+    freshness: "Fresh (Today)",
+    source: "APMC Baramati Yard Daily Bulletin",
+  },
+  {
+    id: "M9B",
+    mandi: "Nashik APMC",
+    crop: "Onion",
+    variety: "Red Garva Medium",
+    minPrice: 3850,
+    modalPrice: 4300,
+    maxPrice: 4700,
+    arrivalsQtl: 2900,
+    distanceKm: 210,
+    updatedAt: "2026-09-08T06:20:00Z",
+    freshness: "Fresh (Today)",
+    source: "Nashik APMC Daily Yard Sheet",
+  },
+
+  // Potato
+  {
+    id: "M10",
+    mandi: "Pune Gultekdi Market Yard",
+    crop: "Potato",
+    variety: "Jyoti Special",
+    minPrice: 1450,
+    modalPrice: 1720,
+    maxPrice: 1950,
+    arrivalsQtl: 1250,
+    distanceKm: 92,
+    updatedAt: "2026-09-08T06:30:00Z",
+    freshness: "Fresh (Today)",
+    source: "MSAMB Price Feed",
+  },
+  {
+    id: "M11",
+    mandi: "Mumbai Vashi APMC",
+    crop: "Potato",
+    variety: "Chandramukhi / Jyoti",
+    minPrice: 1600,
+    modalPrice: 1880,
+    maxPrice: 2150,
+    arrivalsQtl: 2800,
+    distanceKm: 240,
+    updatedAt: "2026-09-08T06:15:00Z",
+    freshness: "Fresh (Today)",
+    source: "Vashi Wholesale Commodity Bulletin",
+  },
+  {
+    id: "M12",
+    mandi: "Baramati APMC",
+    crop: "Potato",
+    variety: "Local Jyoti",
+    minPrice: 1350,
+    modalPrice: 1600,
+    maxPrice: 1800,
+    arrivalsQtl: 380,
+    distanceKm: 12,
+    updatedAt: "2026-09-08T06:00:00Z",
+    freshness: "Fresh (Today)",
+    source: "Baramati Yard Bulletin",
+  },
+
+  // Pomegranate
+  {
+    id: "M13",
+    mandi: "Solapur APMC",
+    crop: "Pomegranate",
+    variety: "Bhagwa Export Grade",
+    minPrice: 7500,
+    modalPrice: 9200,
+    maxPrice: 11500,
+    arrivalsQtl: 450,
+    distanceKm: 190,
+    updatedAt: "2026-09-08T06:00:00Z",
+    freshness: "Fresh (Today)",
+    source: "National Pomegranate Research Centre / Solapur APMC",
+  },
+  {
+    id: "M14",
+    mandi: "Baramati APMC",
+    crop: "Pomegranate",
+    variety: "Bhagwa / Arakta",
+    minPrice: 6800,
+    modalPrice: 8600,
+    maxPrice: 10200,
+    arrivalsQtl: 210,
+    distanceKm: 12,
+    updatedAt: "2026-09-08T06:10:00Z",
+    freshness: "Fresh (Today)",
+    source: "Baramati FPO Hub Market Watch",
+  },
+  {
+    id: "M14B",
+    mandi: "Sangli APMC",
+    crop: "Pomegranate",
+    variety: "Bhagwa Super",
+    minPrice: 7200,
+    modalPrice: 8900,
+    maxPrice: 10800,
+    arrivalsQtl: 320,
+    distanceKm: 175,
+    updatedAt: "2026-09-08T06:15:00Z",
+    freshness: "Fresh (Today)",
+    source: "Sangli Market Committee Bulletin",
+  },
+
+  // Green Chilli
+  {
+    id: "M15",
+    mandi: "Pune Gultekdi Market Yard",
+    crop: "Green Chilli",
+    variety: "G-4 / Jwala",
+    minPrice: 3200,
+    modalPrice: 3850,
+    maxPrice: 4400,
+    arrivalsQtl: 680,
+    distanceKm: 92,
+    updatedAt: "2026-09-08T06:30:00Z",
+    freshness: "Fresh (Today)",
+    source: "MSAMB Price Feed",
+  },
+  {
+    id: "M16",
+    mandi: "Nagpur Cotton Market APMC",
+    crop: "Green Chilli",
+    variety: "Teja / G-4",
+    minPrice: 3000,
+    modalPrice: 3600,
+    maxPrice: 4100,
+    arrivalsQtl: 520,
+    distanceKm: 680,
+    updatedAt: "2026-09-08T06:20:00Z",
+    freshness: "Fresh (Today)",
+    source: "Nagpur APMC Bulletin",
+  },
+  {
+    id: "M16B",
+    mandi: "Kolhapur APMC",
+    crop: "Green Chilli",
+    variety: "Lavangi / G-4",
+    minPrice: 3100,
+    modalPrice: 3700,
+    maxPrice: 4250,
+    arrivalsQtl: 410,
+    distanceKm: 215,
+    updatedAt: "2026-09-08T06:05:00Z",
+    freshness: "Fresh (Today)",
+    source: "Kolhapur APMC Vegetable Yard",
+  },
+
+  // Soyabean
+  {
+    id: "M17",
+    mandi: "Sangli APMC",
+    crop: "Soyabean",
+    variety: "Yellow Standard",
+    minPrice: 4400,
+    modalPrice: 4750,
+    maxPrice: 4950,
+    arrivalsQtl: 1600,
+    distanceKm: 175,
+    updatedAt: "2026-09-08T06:00:00Z",
+    freshness: "Fresh (Today)",
+    source: "Sangli Agriculture Produce Market",
+  },
+  {
+    id: "M18",
+    mandi: "Nagpur Cotton Market APMC",
+    crop: "Soyabean",
+    variety: "Yellow Bold",
+    minPrice: 4350,
+    modalPrice: 4700,
+    maxPrice: 4900,
+    arrivalsQtl: 2400,
+    distanceKm: 680,
+    updatedAt: "2026-09-08T06:10:00Z",
+    freshness: "Fresh (Today)",
+    source: "MSAMB Vidarbha Oilseeds Index",
+  },
+  {
+    id: "M19",
+    mandi: "Solapur APMC",
+    crop: "Soyabean",
+    variety: "Yellow Regular",
+    minPrice: 4300,
+    modalPrice: 4650,
+    maxPrice: 4850,
+    arrivalsQtl: 1100,
+    distanceKm: 190,
+    updatedAt: "2026-09-08T05:55:00Z",
+    freshness: "Fresh (Today)",
+    source: "Solapur APMC Grain Yard",
+  },
+  {
+    id: "M20",
+    mandi: "Baramati APMC",
+    crop: "Soyabean",
+    variety: "Yellow Cleaned",
+    minPrice: 4450,
+    modalPrice: 4720,
+    maxPrice: 4900,
+    arrivalsQtl: 480,
+    distanceKm: 12,
+    updatedAt: "2026-09-08T06:05:00Z",
+    freshness: "Fresh (Today)",
+    source: "Baramati Yard Oilseeds Section",
   },
 ];
 
@@ -321,7 +628,7 @@ function sha256Hex(ascii: string): string {
     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
   ];
-  let compositeLength = asciiBitLength;
+  const compositeLength = asciiBitLength;
   for (i = 0; i < ascii[lengthProperty]; i++) {
     words[i >> 2] |= (ascii.charCodeAt(i) & 0xff) << ((3 - (i % 4)) * 8);
   }
@@ -607,6 +914,61 @@ export const useAppStore = create<AppState>()(
         };
 
         set((state) => ({ auditEvents: [newEvent, ...state.auditEvents] }));
+      },
+
+      fetchRealTimeMandiPrices: async (crop?: string, mandi?: string) => {
+        try {
+          const apiBaseUrl =
+            process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+          const query = new URLSearchParams();
+          if (crop && crop !== "All") query.append("crop", crop);
+          if (mandi) query.append("mandi", mandi);
+
+          const url = `${apiBaseUrl}/market/prices${
+            query.toString() ? `?${query.toString()}` : ""
+          }`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              const mapped: MandiPrice[] = data.map((item: {
+                id: string;
+                mandi: string;
+                crop: string;
+                variety: string;
+                min_price: number;
+                modal_price: number;
+                max_price: number;
+                arrivals_qtl: number;
+                distance_km: number;
+                freshness?: string;
+                source: string;
+              }) => ({
+                id: item.id,
+                mandi: item.mandi,
+                crop: item.crop,
+                variety: item.variety,
+                minPrice: item.min_price,
+                modalPrice: item.modal_price,
+                maxPrice: item.max_price,
+                arrivalsQtl: item.arrivals_qtl,
+                distanceKm: item.distance_km,
+                updatedAt: new Date().toISOString(),
+                freshness:
+                  item.freshness && item.freshness.includes("Yesterday")
+                    ? "Recent (Yesterday)"
+                    : item.freshness && item.freshness.includes("Stale")
+                    ? "Stale (Verify before dispatch)"
+                    : "Fresh (Today)",
+                source: item.source,
+              }));
+              set({ mandiPrices: mapped });
+              return;
+            }
+          }
+        } catch {
+          // Backend offline or error: retain current / local state
+        }
       },
 
       resetDemoData: () =>
