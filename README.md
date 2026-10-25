@@ -2,13 +2,14 @@
 
 <img src=".github/assets/banner.png" alt="KrishiSetu AI Banner" width="100%" style="border-radius: 12px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
 
-# 🌾 KrishiSetu AI (कृषीसेतू)
-### **AI-Powered Market Linkage, True Net Realization & FPO Logistics Aggregator**
+# 🌾 KrishiSetu AI
+### **Autonomous Agricultural Market Linkage, True Net Realization & FPO Logistics Aggregator**
 **Smart India Hackathon (SIH) 2026 — Theme: Smart Agriculture & Rural Development**  
 **Problem Statement ID: 26132 • Category: Software • Team Name: Conquerors**
 
 <br/>
 
+[![CI / Platform Verification](https://github.com/pawaraditya0903/krishisetu-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/pawaraditya0903/krishisetu-ai/actions/workflows/ci.yml)
 [![Live Production Demo](https://img.shields.io/badge/Live%20Demo-krishisetu--ai.vercel.app-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://krishisetu-ai-mu.vercel.app)
 [![SIH 2026 Finalist](https://img.shields.io/badge/SIH%202026-Grand%20Finalist-F59E0B?style=for-the-badge&logo=target&logoColor=white)](https://sih.gov.in)
 [![MIT License](https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
@@ -21,12 +22,12 @@
 [![Google OR-Tools](https://img.shields.io/badge/Fleet%20Optimization-Google%20OR--Tools%20CVRPTW-4285F4?style=flat-square&logo=google)](https://developers.google.com/optimization)
 [![LightGBM](https://img.shields.io/badge/Price%20Forecaster-LightGBM%20Quantile%20Reg-brightgreen?style=flat-square)](https://lightgbm.readthedocs.io/)
 [![SHA-256 Ledger](https://img.shields.io/badge/Trust-Cryptographic%20SHA--256%20Ledger-orange?style=flat-square)](docs/AUDIT_REPORT.md)
-[![Automated Tests](https://img.shields.io/badge/Pytest%20Suite-36%2F36%20Passed-emerald?style=flat-square&logo=pytest)](scripts/)
-[![E2E Tests](https://img.shields.io/badge/E2E%20Platform-16%2F16%20Verified-blue?style=flat-square)](scripts/)
+[![Automated Tests](https://img.shields.io/badge/Pytest%20Suite-36%2F36%20Passed-emerald?style=flat-square&logo=pytest)](backend/tests/)
+[![Platform Verification](https://img.shields.io/badge/Platform%20Verification-16%2F16%20Verified-blue?style=flat-square)](scripts/)
 
 <br/>
 
-[🚀 Launch Live App](https://krishisetu-ai-mu.vercel.app) • [📊 Download Pitch Deck](docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx) • [🗺️ System Architecture](#-system-architecture) • [📸 Visual Tour](#-visual-platform-tour) • [👥 Demo Credentials](#-demo-personas--one-click-logins) • [⚡ 60s Quickstart](#-quickstart-guide)
+[🚀 Launch Live Platform](https://krishisetu-ai-mu.vercel.app) • [📊 Download Pitch Deck](docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx) • [🗺️ System Architecture](#-system-architecture) • [📸 Visual Tour](#-visual-platform-tour) • [👥 Demo Credentials](#-demo-personas--one-click-logins) • [⚡ 60s Quickstart](#-quickstart-guide)
 
 ---
 

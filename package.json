@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node scripts/test-admin-features.mjs",
-    "test:admin": "node scripts/test-admin-features.mjs"
+    "test:admin": "node scripts/test-admin-features.mjs",
+    "test:locations": "npx tsx scripts/test-locations.mjs",
+    "test:vision": "npx tsx scripts/test-vision-engine.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
