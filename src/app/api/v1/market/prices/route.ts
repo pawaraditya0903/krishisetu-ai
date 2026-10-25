@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
         travel_time_hours: m.travelTimeHours,
         lat: m.lat,
         lng: m.lng,
-        freshness_status: m.freshness,
-        data_status: m.dataStatus,
+        freshness_status: m.freshness || "Live (Today)",
+        data_status: m.dataStatus || "Live",
         source: m.source,
         reported_date: m.updatedAt,
       }));
@@ -82,8 +82,8 @@ export async function GET(request: NextRequest) {
     distance_km: r.distance_km,
     lat: r.lat,
     lng: r.lng,
-    freshness_status: r.freshness_status,
-    data_status: r.data_status,
+    freshness_status: r.freshness_status || "Live (Today)",
+    data_status: r.data_status || "Live",
     source: r.source,
     reported_date: r.reported_date,
   }));

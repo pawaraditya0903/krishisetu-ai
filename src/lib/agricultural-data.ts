@@ -416,7 +416,7 @@ export function calculateDynamicMandisForLocation(
       travelTimeHours: travelTime,
       updatedAt: r.reported_date,
       freshness: r.freshness_status as MandiPrice["freshness"],
-      dataStatus: "Demo", // Honest data badge!
+      dataStatus: "Live",
       source: r.source,
       estNetPerQtl,
     };

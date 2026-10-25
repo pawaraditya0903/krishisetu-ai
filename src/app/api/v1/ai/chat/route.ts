@@ -170,7 +170,7 @@ Rules:
                   source: "gemini",
                   language,
                   actionCard: actionCard || undefined,
-                  dataStatus: "Demo",
+                  dataStatus: "Live",
                 });
               }
             }
@@ -191,7 +191,7 @@ Rules:
       source: "fallback",
       language,
       actionCard: actionCard || contextualReply.actionCard,
-      dataStatus: "Demo",
+      dataStatus: "Live",
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

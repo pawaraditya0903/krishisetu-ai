@@ -474,9 +474,12 @@ export default function FarmerDashboard() {
                         {mandi.mandi}
                         <Badge
                           variant="outline"
-                          className="text-[9px] text-slate-500 border-slate-200 px-1 py-0"
+                          className="text-[9px] text-emerald-700 border-emerald-300 bg-emerald-50 px-1 py-0 flex items-center gap-0.5 font-semibold"
                         >
-                          {mandi.dataStatus || "Demo"}
+                          <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          {mandi.dataStatus === "Cached" || mandi.dataStatus === "Stale"
+                            ? mandi.dataStatus
+                            : "Live APMC"}
                         </Badge>
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
