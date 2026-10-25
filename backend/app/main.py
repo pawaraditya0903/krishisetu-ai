@@ -47,8 +47,9 @@ def auto_migrate_schema():
                 if col_name not in existing_cols:
                     conn.execute(text(f"ALTER TABLE crop_lots ADD COLUMN {col_name} {col_type}"))
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger("uvicorn.error").warning("Auto schema migration encountered an issue: %s", e)
 
 auto_migrate_schema()
 

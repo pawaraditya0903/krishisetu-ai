@@ -47,7 +47,7 @@ class NetRealizationEngine:
 
         assumptions = [
             f"Gross price based on latest APMC bulletin for {mandi_name} (₹{modal_price_per_qtl}/qtl).",
-            f"Distance calculated from Baramati FPO Hub: {distance_km} km.",
+            f"Transit distance to {mandi_name}: {distance_km} km.",
             f"Transport: {'Group pooled freight (28.5% saving)' if is_pooled else 'Solo dedicated transport'}.",
             f"Spoilage risk buffer: {spoilage_pct}% for ambient transport."
         ]

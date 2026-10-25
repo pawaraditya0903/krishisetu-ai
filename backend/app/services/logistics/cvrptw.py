@@ -1,6 +1,15 @@
 import math
+import logging
 from typing import Dict, Any, List, Optional
-from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+
+try:
+    from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+    ORTOOLS_AVAILABLE = True
+except ImportError:
+    routing_enums_pb2 = None
+    pywrapcp = None
+    ORTOOLS_AVAILABLE = False
+    logging.getLogger("logistics").info("Google OR-Tools not installed. Using heuristic route optimizer fallback.")
 
 class CVRPTWLogisticsOptimizer:
     """
@@ -124,64 +133,74 @@ class CVRPTWLogisticsOptimizer:
             for node in all_nodes
         ]
 
-        # 1. Create Routing Index Manager & Routing Model
-        manager = pywrapcp.RoutingIndexManager(num_locations, num_vehicles, depot_idx)
-        routing = pywrapcp.RoutingModel(manager)
+        solution = None
+        manager = None
+        routing = None
+        time_dimension = None
 
-        # 2. Add Distance Callback (Arc Cost Evaluator)
-        def distance_callback(from_index, to_index):
-            from_node = manager.IndexToNode(from_index)
-            to_node = manager.IndexToNode(to_index)
-            return distance_matrix[from_node][to_node]
+        if ORTOOLS_AVAILABLE:
+            try:
+                # 1. Create Routing Index Manager & Routing Model
+                manager = pywrapcp.RoutingIndexManager(num_locations, num_vehicles, depot_idx)
+                routing = pywrapcp.RoutingModel(manager)
 
-        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
-        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+                # 2. Add Distance Callback (Arc Cost Evaluator)
+                def distance_callback(from_index, to_index):
+                    from_node = manager.IndexToNode(from_index)
+                    to_node = manager.IndexToNode(to_index)
+                    return distance_matrix[from_node][to_node]
 
-        # 3. Add Capacity Constraints (Demand Dimension)
-        def demand_callback(from_index):
-            from_node = manager.IndexToNode(from_index)
-            return demands[from_node]
+                transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+                routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-        demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
-        routing.AddDimensionWithVehicleCapacity(
-            demand_callback_index,
-            0,
-            [int(vehicle_capacity_kg)],
-            True,
-            "Capacity"
-        )
+                # 3. Add Capacity Constraints (Demand Dimension)
+                def demand_callback(from_index):
+                    from_node = manager.IndexToNode(from_index)
+                    return demands[from_node]
 
-        # 4. Add Time Window Constraints (Time Dimension)
-        def time_callback(from_index, to_index):
-            from_node = manager.IndexToNode(from_index)
-            to_node = manager.IndexToNode(to_index)
-            return time_matrix[from_node][to_node]
+                demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
+                routing.AddDimensionWithVehicleCapacity(
+                    demand_callback_index,
+                    0,
+                    [int(vehicle_capacity_kg)],
+                    True,
+                    "Capacity"
+                )
 
-        time_callback_index = routing.RegisterTransitCallback(time_callback)
-        routing.AddDimension(
-            time_callback_index,
-            30,
-            480,
-            False,
-            "Time"
-        )
-        time_dimension = routing.GetDimensionOrDie("Time")
-        for location_idx, (start_m, end_m) in enumerate(time_windows):
-            index = manager.NodeToIndex(location_idx)
-            time_dimension.CumulVar(index).SetRange(start_m, end_m)
+                # 4. Add Time Window Constraints (Time Dimension)
+                def time_callback(from_index, to_index):
+                    from_node = manager.IndexToNode(from_index)
+                    to_node = manager.IndexToNode(to_index)
+                    return time_matrix[from_node][to_node]
 
-        # 5. Search Parameters
-        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-        search_parameters.first_solution_strategy = (
-            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-        )
-        search_parameters.local_search_metaheuristic = (
-            routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-        )
-        search_parameters.time_limit.seconds = 2
+                time_callback_index = routing.RegisterTransitCallback(time_callback)
+                routing.AddDimension(
+                    time_callback_index,
+                    30,
+                    480,
+                    False,
+                    "Time"
+                )
+                time_dimension = routing.GetDimensionOrDie("Time")
+                for location_idx, (start_m, end_m) in enumerate(time_windows):
+                    index = manager.NodeToIndex(location_idx)
+                    time_dimension.CumulVar(index).SetRange(start_m, end_m)
 
-        # 6. Solve CVRPTW
-        solution = routing.SolveWithParameters(search_parameters)
+                # 5. Search Parameters
+                search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+                search_parameters.first_solution_strategy = (
+                    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+                )
+                search_parameters.local_search_metaheuristic = (
+                    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+                )
+                search_parameters.time_limit.seconds = 2
+
+                # 6. Solve CVRPTW
+                solution = routing.SolveWithParameters(search_parameters)
+            except Exception as e:
+                logging.getLogger("logistics").warning("OR-Tools solver execution failed: %s. Using heuristic fallback.", e)
+                solution = None
 
         ordered_stops = []
         total_dist_meters = 0
@@ -194,10 +213,15 @@ class CVRPTWLogisticsOptimizer:
                 time_var = time_dimension.CumulVar(index)
                 arrival_min = solution.Min(time_var)
 
-                # Format clock time from 07:00 AM baseline
-                hrs = 7 + (arrival_min // 60)
-                mins = arrival_min % 60
-                clock_str = f"{hrs:02d}:{mins:02d} AM"
+                # Format clock time from 07:00 AM baseline (Fix H7)
+                total_arrival_min = 7 * 60 + arrival_min
+                hrs_24 = (total_arrival_min // 60) % 24
+                mins = total_arrival_min % 60
+                period = "PM" if hrs_24 >= 12 else "AM"
+                disp_hrs = hrs_24 if hrs_24 <= 12 else hrs_24 - 12
+                if disp_hrs == 0:
+                    disp_hrs = 12
+                clock_str = f"{disp_hrs:02d}:{mins:02d} {period}"
 
                 # If this is not the initial depot start, record as pickup stop
                 if node_idx != depot_idx:
@@ -215,9 +239,14 @@ class CVRPTWLogisticsOptimizer:
             # Final destination consolidation stop at depot
             depot_time_var = time_dimension.CumulVar(index)
             depot_arrival_min = solution.Min(depot_time_var)
-            depot_hrs = 7 + (depot_arrival_min // 60)
-            depot_mins = depot_arrival_min % 60
-            depot_clock = f"{depot_hrs:02d}:{depot_mins:02d} AM"
+            depot_total_min = 7 * 60 + depot_arrival_min
+            depot_hrs_24 = (depot_total_min // 60) % 24
+            depot_mins = depot_total_min % 60
+            depot_period = "PM" if depot_hrs_24 >= 12 else "AM"
+            depot_disp_hrs = depot_hrs_24 if depot_hrs_24 <= 12 else depot_hrs_24 - 12
+            if depot_disp_hrs == 0:
+                depot_disp_hrs = 12
+            depot_clock = f"{depot_disp_hrs:02d}:{depot_mins:02d} {depot_period}"
 
             ordered_stops.append({
                 "location_name": f"{depot_name} (Consolidation & Weighment)",
@@ -249,10 +278,11 @@ class CVRPTWLogisticsOptimizer:
 
         utilization_pct = min(100.0, round((total_pickup_kg / vehicle_capacity_kg) * 100, 1))
 
-        # Financial Calculations: Solo Travel Baseline vs Pooled CVRPTW
-        solo_travel_cost = len(active_pickups) * 900.0
+        # Financial Calculations: Solo Travel Baseline vs Pooled CVRPTW (Fix M3)
+        solo_travel_cost = max(1.0, len(active_pickups) * 900.0)
         pooled_route_cost = round(total_distance_km * 34.0 + 450.0, 0)
-        savings_pct = round(((solo_travel_cost - pooled_route_cost) / solo_travel_cost) * 100.0, 1)
+        raw_savings = ((solo_travel_cost - pooled_route_cost) / solo_travel_cost) * 100.0
+        savings_pct = max(0.0, round(raw_savings, 1))
 
         return {
             "route_id": "ROUTE-BARAMATI-NORTH-01",
@@ -264,7 +294,7 @@ class CVRPTWLogisticsOptimizer:
             "estimated_cost_inr": pooled_route_cost,
             "farmer_savings_vs_solo_pct": savings_pct,
             "solver_metadata": {
-                "solver": "Google OR-Tools pywrapcp (v9.15)",
+                "solver": "Google OR-Tools pywrapcp (v9.15)" if solution else "Greedy-Cluster-Dispatch-Fallback",
                 "problem_type": "Capacitated Vehicle Routing Problem with Time Windows (CVRPTW)",
                 "metaheuristic": "Guided Local Search with Path Cheapest Arc",
                 "capacity_constraint_kg": vehicle_capacity_kg,
