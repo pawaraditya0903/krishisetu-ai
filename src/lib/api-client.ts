@@ -9,7 +9,8 @@ import {
 import { useAppStore } from "./store";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" ? "/api/v1" : "http://127.0.0.1:8000/api/v1");
 
 interface ApiResponse<T> {
   data: T | null;
@@ -448,4 +449,23 @@ export const apiClient = {
       return { data: null, error: res.error, isOffline: res.isOffline };
     },
   },
+
+  // Google Gemini AI Voice Assistant
+  ai: {
+    chat: async (
+      message: string,
+      language: string = "mr-IN",
+      history: { role: string; content: string }[] = [],
+      apiKey?: string
+    ): Promise<ApiResponse<{ reply: string; source: "gemini" | "fallback"; language: string; actionHint?: string }>> => {
+      return request<{ reply: string; source: "gemini" | "fallback"; language: string; actionHint?: string }>(
+        "/ai/chat",
+        {
+          method: "POST",
+          body: JSON.stringify({ message, language, history, api_key: apiKey }),
+        }
+      );
+    },
+  },
 };
+

@@ -184,6 +184,7 @@ export interface Translations {
     tapMicOrType: string;
     languageLabel: string;
     generalFallback: string;
+    geminiBadge: string;
   };
   advisor: {
     title: string;
@@ -389,6 +390,15 @@ export const translations: Record<Language, Translations> = {
         Pomegranate: "Pomegranate",
         "Green Chilli": "Green Chilli",
         Soyabean: "Soyabean",
+        Cotton: "Cotton",
+        Wheat: "Wheat",
+        Maize: "Maize",
+        Ginger: "Ginger",
+        Garlic: "Garlic",
+        Turmeric: "Turmeric",
+        Chickpea: "Chickpea",
+        Banana: "Banana",
+        Grapes: "Grapes",
         All: "All",
       },
     },
@@ -466,6 +476,7 @@ export const translations: Record<Language, Translations> = {
       tapMicOrType: "Tap the mic button or type your question below.",
       languageLabel: "Language:",
       generalFallback: "Here is the agricultural advisory for your query:",
+      geminiBadge: "Powered by Google Gemini 1.5 Flash AI",
     },
     advisor: {
       title: "AI Sale & Timing Advisor",
@@ -679,6 +690,15 @@ export const translations: Record<Language, Translations> = {
         Pomegranate: "डाळिंब",
         "Green Chilli": "हिरवी मिरची",
         Soyabean: "सोयाबीन",
+        Cotton: "कापूस",
+        Wheat: "गहू",
+        Maize: "मका",
+        Ginger: "आले",
+        Garlic: "लसूण",
+        Turmeric: "हळद",
+        Chickpea: "हरभरा",
+        Banana: "केळी",
+        Grapes: "द्राक्षे",
         All: "सर्व पिके",
       },
     },
@@ -756,6 +776,7 @@ export const translations: Record<Language, Translations> = {
       tapMicOrType: "माइक बटण दाबा किंवा खाली तुमचा प्रश्न टाईप करा.",
       languageLabel: "भाषा:",
       generalFallback: "तुमच्या प्रश्नासाठी कृषी सल्ला खालीलप्रमाणे आहे:",
+      geminiBadge: "गुगल जेमिनी १.५ फ्लॅश AI द्वारे संचालित",
     },
     advisor: {
       title: "एआय विक्री व वेळ सल्लागार",
@@ -969,6 +990,15 @@ export const translations: Record<Language, Translations> = {
         Pomegranate: "अनार",
         "Green Chilli": "हरी मिर्च",
         Soyabean: "सोयाबीन",
+        Cotton: "कपास",
+        Wheat: "गेहूं",
+        Maize: "मक्का",
+        Ginger: "अदरक",
+        Garlic: "लहसुन",
+        Turmeric: "हल्दी",
+        Chickpea: "चना",
+        Banana: "केला",
+        Grapes: "अंगूर",
         All: "सभी फसलें",
       },
     },
@@ -1046,6 +1076,7 @@ export const translations: Record<Language, Translations> = {
       tapMicOrType: "माइक बटन दबाएं या नीचे अपना प्रश्न लिखें।",
       languageLabel: "भाषा:",
       generalFallback: "आपके प्रश्न के लिए कृषि सलाह निम्नलिखित है:",
+      geminiBadge: "गूगल जेमिनी 1.5 फ्लैश एआई द्वारा संचालित",
     },
     advisor: {
       title: "एआई फसल बिक्री एवं समय सलाहकार",
