@@ -1,4 +1,6 @@
-export type Role = "farmer" | "fpo" | "buyer" | "admin";
+export type Role = "farmer" | "fpo" | "buyer" | "verifier" | "admin";
+
+export type UserStatus = "Active" | "Pending" | "Inactive";
 
 export interface User {
   id: string;
@@ -6,9 +8,37 @@ export interface User {
   role: Role;
   location?: string;
   phone?: string;
+  email?: string;
   avatar?: string;
+  gender?: "Male" | "Female" | "Other" | "Prefer not to say";
+  preferredLanguage?: "mr" | "hi" | "en";
+  status: UserStatus;
+  farmerType?: "Individual" | "Tenant" | "FPO Member" | "SHG Member" | "Small/Marginal" | "Medium" | "Large";
+  farmName?: string;
+  village?: string;
+  taluka?: string;
+  district?: string;
+  state?: string;
+  pincode?: string;
+  lat?: number;
+  lng?: number;
+  farmAreaAcres?: number;
+  crops?: string[];
+  primaryCrops?: string[];
+  bankUpiMasked?: string;
+  upiId?: string;
   fpoId?: string;
   fpoName?: string;
+  assignedFpoId?: string;
+  assignedFpoName?: string;
+  assignedDistricts?: string[]; // for verifiers
+  organization?: string;
+  rating?: number;
+  paymentReliabilityScore?: number;
+  defaultPassword?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
   accessToken?: string;
 }
 
@@ -235,4 +265,162 @@ export interface LogisticsRoutePlan {
   loadUtilizationPct: number;
   estCostInr: number;
   savingsVsIndividualPct: number;
+}
+
+// ==================== FPO & COLLECTION CENTERS ====================
+export interface FPOCollectionCenter {
+  id: string;
+  fpoId: string;
+  name: string;
+  village?: string;
+  taluka: string;
+  district: string;
+  state: string;
+  pincode?: string;
+  lat: number;
+  lng: number;
+  capacityKg: number;
+  contactPerson?: string;
+  phone?: string;
+  status: "Active" | "Inactive";
+}
+
+export interface FPOOrganization {
+  id: string;
+  name: string;
+  regNumber?: string;
+  contactPerson: string;
+  phone: string;
+  email?: string;
+  village?: string;
+  taluka: string;
+  district: string;
+  state: string;
+  pincode?: string;
+  lat: number;
+  lng: number;
+  collectionCenters: FPOCollectionCenter[];
+  supportedCrops: string[];
+  serviceFeePaisePerQtl: number;
+  poolMinKg: number;
+  poolMaxKg: number;
+  defaultPoolClosingDays: number;
+  managerIds: string[];
+  memberFarmerIds: string[];
+  status: "Active" | "Pending" | "Inactive";
+  notes?: string;
+  createdAt: string;
+}
+
+// ==================== MANDI MASTER REGISTRY ====================
+export interface MandiMaster {
+  id: string;
+  mandi: string;
+  marketCode?: string;
+  village?: string;
+  taluka?: string;
+  district: string;
+  state: string;
+  pincode?: string;
+  lat: number;
+  lng: number;
+  supportedCrops: string[];
+  varieties?: string[];
+  contactPerson?: string;
+  phone?: string;
+  dataSource: "Agmarknet (Govt of India)" | "MSAMB" | "e-NAM" | "APMC Direct" | "Manual Admin";
+  status: "Active" | "Inactive" | "Archived";
+  notes?: string;
+  lastSyncAt: string;
+}
+
+// ==================== CROP CATALOG & GRADE RULES ====================
+export interface CropGradeRule {
+  grade: "Grade A" | "Grade B" | "Grade C";
+  minSizeMm?: number;
+  maxDefectPct?: number;
+  minColorScorePct?: number;
+  priceAdjustmentPct: number; // e.g. +10% for A, -15% for C
+}
+
+export interface CropCatalogItem {
+  id: string;
+  name: string;
+  marathiName: string;
+  hindiName: string;
+  category: "Vegetable" | "Fruit" | "Grain" | "Pulse" | "Cash Crop" | "Spice";
+  icon?: string;
+  varieties: string[];
+  perishability: "Very High (1-3 days)" | "High (4-7 days)" | "Medium (1-3 weeks)" | "Low (Months)";
+  storageRecommendation: string;
+  defaultBatchSizeKg: number;
+  gradeRules: CropGradeRule[];
+  status: "Active" | "Inactive";
+}
+
+// ==================== TRANSPORTER & FLEET ====================
+export interface FleetVehicle {
+  id: string;
+  regNumber: string;
+  vehicleType: "Pickup Tempo" | "Mini Truck (14ft)" | "Eicher 17ft" | "Reefer Truck";
+  capacityKg: number;
+  isRefrigerated: boolean;
+  driverName?: string;
+  driverPhone?: string;
+  status: "Available" | "In Transit" | "Maintenance" | "Inactive";
+}
+
+export interface Transporter {
+  id: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email?: string;
+  baseLocation: string;
+  baseLat: number;
+  baseLng: number;
+  serviceDistricts: string[];
+  costPerKmInr: number;
+  vehicles: FleetVehicle[];
+  status: "Active" | "Inactive";
+}
+
+// ==================== PLATFORM SETTINGS ====================
+export interface PlatformSettings {
+  defaultSearchRadiusKm: number;
+  minRadiusKm: number;
+  maxRadiusKm: number;
+  radiusExpansionSteps: number[]; // [50, 100, 200, 300, 500]
+  maxFarmerSelectableRadiusKm: number;
+  allowFarmerCustomRadius: boolean;
+  searchOnlyActiveMandis: boolean;
+  searchOnlyWithLatestPrice: boolean;
+  priceFreshnessThresholdHours: number;
+  stalePriceThresholdHours: number;
+  showMarketsWithoutLatestPrice: boolean;
+  defaultCrop: string;
+  defaultTransportCostPerKm: number;
+  defaultHandlingCostPaise: number;
+  defaultPackagingCostPaise: number;
+  defaultCommissionPct: number;
+  defaultExpectedSpoilagePct: number;
+  voiceAssistantModel: string;
+  voiceAssistantSpeed: number;
+  enableLiveAgmarknetFeed: boolean;
+}
+
+// ==================== ROLE PERMISSIONS ====================
+export interface RolePermissions {
+  role: Role;
+  label: string;
+  canViewMarketPrices: boolean;
+  canUseVoiceAssistant: boolean;
+  canGradeCrop: boolean;
+  canCreatePools: boolean;
+  canManageLogistics: boolean;
+  canAuthorizeEscrow: boolean;
+  canViewPrivateFarmerData: boolean;
+  canManageUsers: boolean;
+  canManageMandis: boolean;
+  canManageSettings: boolean;
 }

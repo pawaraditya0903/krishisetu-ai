@@ -78,6 +78,18 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     };
   }, [setOffline, language]);
 
+  // Client-side RBAC Guard: Restrict /admin/* to admin role only
+  useEffect(() => {
+    if (pathname?.startsWith("/admin") && currentUser && currentUser.role !== "admin") {
+      toast.error(
+        language === "mr"
+          ? "प्रवेश नाकारला: प्रशासक अधिकार आवश्यक आहेत."
+          : "Access Denied: Administrator privileges required."
+      );
+      router.replace(`/${currentUser.role}`);
+    }
+  }, [pathname, currentUser, router, language]);
+
   if (!currentUser) {
     return <div className="p-8 text-center text-slate-500">Redirecting to login...</div>;
   }
@@ -104,11 +116,20 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
       { name: t.nav.myOffers, href: "/buyer/offers", icon: ShoppingCart },
       { name: t.nav.deliveryAcceptance, href: "/buyer/delivery", icon: CheckSquare },
     ],
+    verifier: [
+      { name: language === "mr" ? "लॉट पडताळणी" : language === "hi" ? "लॉट सत्यापन" : "Verify Lots", href: "/fpo/verify", icon: CheckSquare },
+      { name: language === "mr" ? "गुणवत्ता ग्रेडिंग" : language === "hi" ? "गुणवत्ता ग्रेडिंग" : "Quality Grading", href: "/farmer/grade", icon: Camera },
+    ],
     admin: [
-      { name: t.nav.dashboard, href: "/admin", icon: LayoutDashboard },
-      { name: t.nav.users, href: "/admin/users", icon: Users },
-      { name: t.nav.marketData, href: "/admin/market", icon: LineChart },
-      { name: t.nav.modelMonitoring, href: "/admin/model", icon: ShieldAlert },
+      { name: t.nav.dashboard || "Overview", href: "/admin", icon: LayoutDashboard },
+      { name: t.nav.users || "Users", href: "/admin/users", icon: Users },
+      { name: language === "mr" ? "बाजार समित्या (मंडी)" : language === "hi" ? "मंडी मास्टर" : "Mandis", href: "/admin/mandis", icon: Store },
+      { name: language === "mr" ? "एफपीओ व्यवस्थापन" : language === "hi" ? "एफपीओ प्रबंधन" : "FPO Roster", href: "/admin/fpos", icon: Users },
+      { name: language === "mr" ? "पिके आणि ग्रेड" : language === "hi" ? "फसल कैटलॉग" : "Crop Catalog", href: "/admin/crops", icon: Sprout },
+      { name: language === "mr" ? "वाहतूक आणि वाहने" : language === "hi" ? "लॉजिस्टिक्स" : "Logistics & Fleet", href: "/admin/logistics", icon: Truck },
+      { name: language === "mr" ? "शोध सेटिंग्ज" : language === "hi" ? "खोज सेटिंग्स" : "Discovery Settings", href: "/admin/settings", icon: LineChart },
+      { name: language === "mr" ? "भूमिका आणि परवानग्या" : language === "hi" ? "भूमिका अनुमतियाँ" : "Role Permissions", href: "/admin/roles", icon: ShieldAlert },
+      { name: language === "mr" ? "ऑडिट लेजर" : language === "hi" ? "ऑडिट लेज़र" : "Audit Ledger", href: "/admin/audit", icon: FileText },
     ],
   };
 
