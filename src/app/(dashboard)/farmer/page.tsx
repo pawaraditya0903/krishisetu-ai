@@ -24,7 +24,7 @@ export default function FarmerDashboard() {
             {t.farmer.greeting}, {currentUser.name.split(" ")[0]} 👋
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm">
-            {isOffline ? "Offline Mode • Queued locally" : "Online • Real-Time Baramati APMC Connected"}
+            {isOffline ? t.farmer.offlineStatus : t.farmer.onlineStatus}
           </p>
         </div>
         <Link href="/farmer/grade">
@@ -44,7 +44,7 @@ export default function FarmerDashboard() {
             <div className="text-2xl font-extrabold text-slate-900">
               ₹1,940<span className="text-xs font-normal text-slate-500">/qtl</span>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Tomato • Baramati APMC Yard</p>
+            <p className="text-[11px] text-slate-500 mt-1">{t.market.crops.Tomato || "Tomato"} • Baramati APMC Yard</p>
           </CardContent>
         </Card>
 
@@ -55,7 +55,7 @@ export default function FarmerDashboard() {
               <Sprout className="w-4 h-4 text-green-600" />
             </div>
             <div className="text-2xl font-extrabold text-green-700">Grade A</div>
-            <p className="text-[11px] text-slate-500 mt-1">External Visual AI Estimate</p>
+            <p className="text-[11px] text-slate-500 mt-1">{t.farmer.externalAIEstimate}</p>
           </CardContent>
         </Card>
 
@@ -81,7 +81,7 @@ export default function FarmerDashboard() {
               <IndianRupee className="w-4 h-4 text-green-600" />
             </div>
             <div className="text-2xl font-extrabold text-slate-900">₹8,420</div>
-            <p className="text-[11px] text-emerald-700 font-medium mt-1">Released in Nodal Account</p>
+            <p className="text-[11px] text-emerald-700 font-medium mt-1">{t.farmer.releasedNodal}</p>
           </CardContent>
         </Card>
       </div>
@@ -89,18 +89,18 @@ export default function FarmerDashboard() {
       {/* Market Journey Stepper */}
       <div className="bg-green-50 rounded-xl p-4 md:p-5 border border-green-200">
         <h3 className="font-semibold text-green-950 text-xs uppercase tracking-wider mb-3">
-          End-to-End Market Linkage Journey
+          {t.farmer.journeyTitle}
         </h3>
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-green-800">
-          <Badge className="bg-green-700 text-white border-none">1. Capture 3 Photos</Badge>
+          <Badge className="bg-green-700 text-white border-none">{t.farmer.journey1}</Badge>
           <ArrowRight className="w-3.5 h-3.5 text-green-600" />
-          <Badge variant="outline" className="bg-white text-green-800 border-green-300">2. External AI Grade</Badge>
+          <Badge variant="outline" className="bg-white text-green-800 border-green-300">{t.farmer.journey2}</Badge>
           <ArrowRight className="w-3.5 h-3.5 text-green-600" />
-          <Badge variant="outline" className="bg-white text-green-800 border-green-300">3. Net Mandi Compare</Badge>
+          <Badge variant="outline" className="bg-white text-green-800 border-green-300">{t.farmer.journey3}</Badge>
           <ArrowRight className="w-3.5 h-3.5 text-green-600" />
-          <Badge variant="outline" className="bg-white text-green-800 border-green-300">4. FPO Group Pooling</Badge>
+          <Badge variant="outline" className="bg-white text-green-800 border-green-300">{t.farmer.journey4}</Badge>
           <ArrowRight className="w-3.5 h-3.5 text-green-600" />
-          <Badge variant="outline" className="bg-white text-green-800 border-green-300">5. Nodal Payout</Badge>
+          <Badge variant="outline" className="bg-white text-green-800 border-green-300">{t.farmer.journey5}</Badge>
         </div>
       </div>
 
@@ -109,11 +109,11 @@ export default function FarmerDashboard() {
           <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold">{t.farmer.recentLots}</CardTitle>
-              <CardDescription className="text-xs">Your active and verified crop lots in the system</CardDescription>
+              <CardDescription className="text-xs">{t.farmer.lotsDescription}</CardDescription>
             </div>
             <Link href="/farmer/orders">
               <Button variant="ghost" size="sm" className="text-xs text-green-700">
-                View All Orders
+                {t.farmer.viewAllOrders}
               </Button>
             </Link>
           </CardHeader>
@@ -149,7 +149,7 @@ export default function FarmerDashboard() {
             ))}
             {myLots.length === 0 && (
               <div className="text-center p-6 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-xs">
-                No lots created yet. Click &quot;Start Selling&quot; to begin.
+                {t.farmer.noLots}
               </div>
             )}
           </CardContent>
@@ -158,7 +158,7 @@ export default function FarmerDashboard() {
         <Card className="border-slate-200">
           <CardHeader className="pb-3 border-b border-slate-100">
             <CardTitle className="text-base font-bold">{t.farmer.nearbyMandis}</CardTitle>
-            <CardDescription className="text-xs">Daily rates for Tomato</CardDescription>
+            <CardDescription className="text-xs">{t.farmer.dailyRates}</CardDescription>
           </CardHeader>
           <CardContent className="p-4 space-y-3.5">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
@@ -187,7 +187,7 @@ export default function FarmerDashboard() {
       </div>
 
       <div className="text-center text-xs text-slate-400 pb-4">
-        Disclaimer: All prices and recommendations are demo estimates, not guarantees. This is an SIH prototype.
+        {t.farmer.footerDisclaimer}
       </div>
     </div>
   );
