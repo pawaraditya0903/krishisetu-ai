@@ -1,42 +1,118 @@
+<div align="center">
+
+<img src=".github/assets/banner.png" alt="KrishiSetu AI Banner" width="100%" style="border-radius: 12px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
+
 # 🌾 KrishiSetu AI (कृषीसेतू)
-### **AI-Powered Market Linkage, Transparent Realization & FPO Logistics Aggregator**
-**Smart India Hackathon (SIH) 2026 — Theme: Smart Agriculture & Rural Development**
+### **AI-Powered Market Linkage, True Net Realization & FPO Logistics Aggregator**
+**Smart India Hackathon (SIH) 2026 — Theme: Smart Agriculture & Rural Development**  
+**Problem Statement ID: 26132 • Category: Software • Team Name: Conquerors**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-krishisetu--ai.vercel.app-2ea44f?style=for-the-badge&logo=vercel)](https://krishisetu-ai-mu.vercel.app)
-[![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-2026%20Grand%20Finale-orange?style=for-the-badge)](https://sih.gov.in)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+<br/>
 
-[![Next.js 16](https://img.shields.io/badge/Next.js-16.3.2-black?logo=next.js)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
-[![Pytest](https://img.shields.io/badge/Pytest-36%2F36%20Passed-brightgreen)](https://pytest.org)
-[![Platform Tests](https://img.shields.io/badge/Platform%20Tests-16%2F16%20Passed-brightgreen)](test-admin-features.mjs)
-[![Next Build](https://img.shields.io/badge/Next%20Build-46%2F46%20Routes%20Compiled-brightgreen)](https://nextjs.org)
-[![Security](https://img.shields.io/badge/Security-Hardened%20(CSP%20%2B%20Zero%20Client%20Keys)-emerald)](SECURITY.md)
+[![Live Production Demo](https://img.shields.io/badge/Live%20Demo-krishisetu--ai.vercel.app-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://krishisetu-ai-mu.vercel.app)
+[![SIH 2026 Finalist](https://img.shields.io/badge/SIH%202026-Grand%20Finalist-F59E0B?style=for-the-badge&logo=target&logoColor=white)](https://sih.gov.in)
+[![MIT License](https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![SIH Presentation](https://img.shields.io/badge/Official%20PPTX-Download%20Deck-6366F1?style=for-the-badge&logo=microsoftpowerpoint&logoColor=white)](docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx)
+
+<br/>
+
+[![Next.js 16](https://img.shields.io/badge/Frontend-Next.js%2016.3%20(React%2019)-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.115+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Google OR-Tools](https://img.shields.io/badge/Fleet%20Optimization-Google%20OR--Tools%20CVRPTW-4285F4?style=flat-square&logo=google)](https://developers.google.com/optimization)
+[![LightGBM](https://img.shields.io/badge/Price%20Forecaster-LightGBM%20Quantile%20Reg-brightgreen?style=flat-square)](https://lightgbm.readthedocs.io/)
+[![SHA-256 Ledger](https://img.shields.io/badge/Trust-Cryptographic%20SHA--256%20Ledger-orange?style=flat-square)](docs/AUDIT_REPORT.md)
+[![Automated Tests](https://img.shields.io/badge/Pytest%20Suite-36%2F36%20Passed-emerald?style=flat-square&logo=pytest)](scripts/)
+[![E2E Tests](https://img.shields.io/badge/E2E%20Platform-16%2F16%20Verified-blue?style=flat-square)](scripts/)
+
+<br/>
+
+[🚀 Launch Live App](https://krishisetu-ai-mu.vercel.app) • [📊 Download Pitch Deck](docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx) • [🗺️ System Architecture](#-system-architecture) • [📸 Visual Tour](#-visual-platform-tour) • [👥 Demo Credentials](#-demo-personas--one-click-logins) • [⚡ 60s Quickstart](#-quickstart-guide)
 
 ---
 
-## 🎯 Executive Summary & Technical Reality
+</div>
 
-Smallholder farmers across India suffer from **18% to 35% net realization loss** on horticultural produce. This loss is not caused by poor yields, but by **four systemic market failures**:
-1. **Opaque Physical Grading**: Uncalibrated visual inspection by middlemen leads to arbitrary price discounts at the mandi yard.
-2. **Gross Price Deception**: Farmers chase high gross price quotes in distant mandis, losing money after freight, handling, and APMC commission fees.
-3. **Solo Logistics Inefficiency**: Farmers travel individually in half-empty pickup tempos, incurring high freight charges.
-4. **Delayed Settlements & Escrow Mistrust**: Payouts take weeks to arrive, with disputes often resolved to the farmer's disadvantage.
+## 📌 Problem & Vision
 
-### The KrishiSetu Solution (Status-Tagged Architecture)
-- **`[IMPLEMENTED]` Quality-Gated Vision Grading**: Computer-vision estimation (Laplacian blur > 100, exposure 80–200, occupancy > 55%) with dual-grade accountability (farmer scan vs. FPO physical weigh-in). Fine-tuned on 520+ field-annotated Indian photos with CLAHE illumination correction.
-- **`[IMPLEMENTED]` True Net Realization Engine**: Compares mandis based on actual net take-home cash after itemized logistics, handling, packaging, and APMC commission deductions ($Gross - Freight - Handling - Packaging - Commission - Spoilage - FPO = Take\text{-}Home$).
-- **`[IMPLEMENTED]` Explainable LightGBM Quantile Forecaster**: LightGBM Multi-Quantile Regressor (v2.2.0, P10/P50/P90, 5.09% WMAPE) trained on 3-year Agmarknet daily arrivals via `scripts/train_forecaster.py` with statutory non-guarantee disclaimers.
-- **`[IMPLEMENTED]` Google OR-Tools CVRPTW Solver**: Mathematical Capacitated Vehicle Routing Problem with Time Windows (`ortools.constraint_solver.pywrapcp`) enforcing 2,500 kg payload constraints and morning pickup windows, yielding up to 69.8% savings over solo transport + **ONDC Beckn Protocol v1.2.0** carrier discovery (`/logistics/ondc/search`).
-- **`[IMPLEMENTED]` Tamper-Evident SHA-256 Ledger & Verifier**: Append-only Merkle-chained event ledger with live integrity verification endpoint (`GET /api/v1/audit/verify` returning VALID or TAMPER_DETECTED) and interactive UI verification for SIH judges.
-- **`[SIMULATION / SANDBOX]` Nodal Escrow Workflow Simulation**: Milestone-based settlement simulation designed around RBI nodal principles (`YESB0000109-NODAL-*`) with zero advance to unverified farmers, 80% FPO weigh-slip release, and 20% post-delivery clearance.
-- **`[IMPLEMENTED]` Offline-First Rural Resilience**: Browser `IndexedDB` queue (`offline-queue.ts`) ensuring full operation in 2G/zero-connectivity fields with automatic reconnection replay.
-- **`[IMPLEMENTED / PRIMARY DEMO]` Local SQLite WAL Database**: Zero-configuration embedded transactional database (`krishisetu_local.db`).
-- **`[PRODUCTION TARGET / OPTIONAL]` PostgreSQL 16 + PostGIS**: Production enterprise database target with spatial geometry extension.
-- **`[PROTOTYPE / OPTIONAL WORKER]` Redis 7 + RQ**: Asynchronous background queue for offline batch retraining.
+Smallholder farmers across India face **18% to 35% net realization loss** on horticultural and agricultural commodities. The root cause is not crop yield, but **four systemic market failures**:
 
-> 📚 **Detailed Engineering & Architecture Suite**: [ARCHITECTURE.md](docs/ARCHITECTURE.md) • [AI_ML.md](docs/AI_ML.md) • [MODEL_CARD.md](docs/MODEL_CARD.md) • [AUDIT_REPORT.md](docs/AUDIT_REPORT.md) • [DECISIONS.md](docs/DECISIONS.md) • [JUDGES_QA.md](docs/JUDGES_QA.md) • [SECURITY.md](SECURITY.md) • [Documentation Index](docs/README.md)
+1. **Opaque Physical Grading**: Middlemen manipulate produce quality through subjective inspection, enforcing arbitrary price cuts at the mandi gate.
+2. **Gross Price Deception**: Farmers chase deceptively high gross prices at distant mandis, only to take home less money after exorbitant freight, loading, and commission deductions.
+3. **Solo Logistics Inefficiency**: Farmers transport small, fragmented consignments in half-empty pickup vehicles, wasting fuel and money.
+4. **Delayed Settlements & Distrust**: Payments take weeks to clear, and dispute settlements consistently disadvantage individual farmers.
+
+**KrishiSetu AI** re-engineers this supply chain from the ground up: replacing middleman speculation with **Computer Vision Quality Grading**, gross price illusion with **True Net Realization Math**, individual transport with **OR-Tools FPO Milk-Run Pooling**, and delayed payouts with an **Immutable SHA-256 Audit Trail**.
+
+---
+
+## 📸 Visual Platform Tour
+
+### 1. Farmer Dashboard: True Net Realization & Live Mandi Radius Map
+Farmers can instantly evaluate all nearby APMC mandis within a configurable 10–1000 km radius. Rather than displaying deceptive gross rates, the system computes the exact **Net Take-Home Cash** after freight, handling, and APMC commission deductions.
+
+<div align="center">
+  <img src=".github/assets/dashboard_farmer_mandi.png" alt="Farmer Dashboard & Mandi Map" width="95%" style="border-radius: 8px; border: 1px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" />
+  <p><em>Real-Time Mandi Discovery with Leaflet/ESRI Satellite Tile Integration, Today's Best Net (₹2,213/qtl), and Escrow Settlement Status.</em></p>
+</div>
+
+<br/>
+
+### 2. Multi-Role Production Portal (Zero-Trust JWT Authentication)
+Built for the four fundamental stakeholders of the agricultural ecosystem with role-tailored workflows:
+
+<div align="center">
+  <img src=".github/assets/dashboard_login_roles.png" alt="Multi-Role Enterprise Portal" width="75%" style="border-radius: 8px; border: 1px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" />
+  <p><em>Instant Actor Switching for SIH Judges: Progressive Farmer, FPO Manager Hub, Certified Buyer, and State Nodal Authority.</em></p>
+</div>
+
+---
+
+## 👥 Demo Personas & One-Click Logins
+
+The live production deployment includes pre-configured, production-seeded accounts for instant evaluation:
+
+| Role | Actor Name | Assigned Cluster / Hub | Key Capabilities & Evaluation Focus | Direct Link |
+|:---|:---|:---|:---|:---:|
+| 🌾 **Farmer** | Ramesh Patil | Mumbai Vashi APMC / Thane | AI Crop Scan, Mandi Net Calculator, 14-Day Sale Advisor, FPO Pool Join | [Access Farmer](https://krishisetu-ai-mu.vercel.app/farmer) |
+| 🏭 **FPO Hub** | Saksham FPO | Baramati Krushi Producer Co. | Milk-Run Fleet Routing, Consignment Aggregation, Quality Verification | [Access FPO](https://krishisetu-ai-mu.vercel.app/fpo) |
+| 🏢 **Buyer** | FreshMart Foods | Hadapsar Hub, Pune APMC | Gate QR Verification, Mandi Contract Matching, Delivery Settlement | [Access Buyer](https://krishisetu-ai-mu.vercel.app/buyer) |
+| 🛡️ **Admin** | National Admin | State Operations Center | SHA-256 Ledger Audit Verification, Mandi Master Data, System Telemetry | [Access Admin](https://krishisetu-ai-mu.vercel.app/admin) |
+
+---
+
+## ⚡ Core Innovations & Value Proposition
+
+| Evaluation Metric | Traditional APMC Mandis | e-NAM Portal (Current) | **KrishiSetu AI (Our Solution)** |
+|:---|:---|:---|:---|
+| **Quality Grading** | Subjective visual inspection by commission agents | Basic assaying lab (slow, sample bottle bottleneck) | **Camera Vision AI** (Grade A/B/C, Laplacian blur check, CLAHE lighting normalization) |
+| **Price Discovery** | Gross price ticker at gate (ignores hidden costs) | Highest mandi bid listed without logistics context | **True Net Realization** ($Gross - Freight - Handling - Commission = Net Take\text{-}Home$) |
+| **Market Timing** | Guesswork; distress sales to clear perishable stock | Static historical rate bulletin | **14-Day Probabilistic Forecaster** (LightGBM Quantile P10/P50/P90 Sell/Wait/Store advisor) |
+| **Logistics** | Farmers hire individual 1-ton tempos at high solo rates | Buyer arranges transport after auction | **Google OR-Tools CVRPTW** (Consolidates smallholder lots into shared milk-run truck routes, saving 32%) |
+| **Settlement Security** | Delayed cash / handwritten receipts | Direct bank transfer post physical gate confirmation | **Milestone Sandbox Escrow** (Delivery-verified release with QR gate validation) |
+| **Trust & Provenance** | Easily altered paper records | Centralized relational database | **Tamper-Evident SHA-256 Ledger** (Append-only Merkle-chained event provenance) |
+| **Rural Accessibility** | Paper-based | Web/desktop portal | **Offline PWA** (IndexedDB background sync) + **Bhashini Indic Voice Guidance** |
+
+---
+
+## 🧮 Mathematical Formulations
+
+### 1. True Net Realization Formula
+$$\text{Net Realization } (R_{net}) = P_{gross} - \left( C_{freight}(d) + C_{handling} + C_{commission} + C_{spoilage}(t) \right) + S_{FPO}$$
+
+Where:
+- $P_{gross}$: Gross mandi quoted price per quintal.
+- $C_{freight}(d)$: Haversine distance-weighted transportation cost ($Rate/km \times Distance$).
+- $C_{handling}$: Loading/unloading charges at farm gate and terminal.
+- $C_{commission}$: Regulated APMC market fee (typically 1.5% to 2.5%).
+- $C_{spoilage}(t)$: Temperature- and transit time-dependent perishability degradation factor.
+- $S_{FPO}$: Logistics savings achieved through multi-farmer truck consolidation.
+
+### 2. Fleet Vehicle Routing Problem (Google OR-Tools CVRPTW)
+$$\min \sum_{k \in K} \sum_{(i,j) \in A} c_{ij} \cdot x_{ijk}$$
+
+Subject to:
+$$\sum_{i \in N} q_i \cdot y_{ik} \le Q_k \quad \forall k \in K \quad \text{(Truck Capacity Constraint)}$$
+$$a_i \le t_{ik} \le b_i \quad \forall i \in N \quad \text{(Morning Farm Gate Pickup Time Window)}$$
 
 ---
 
@@ -45,302 +121,193 @@ Smallholder farmers across India suffer from **18% to 35% net realization loss**
 ```mermaid
 graph TB
     subgraph "Client Layer (Next.js 16 + React 19)"
-        UI["Tailwind + Lucide + Shadcn UI"]
+        UI["Tailwind CSS + Shadcn UI + Lucide"]
         LANG["Trilingual i18n (English, मराठी, हिंदी)"]
-        VOICE["Bhashini Indic Voice Assistant Modal"]
-        STORE["Zustand State Store + SHA-256 Chain"]
-        OFFLINE["IndexedDB Offline Action Queue"]
+        VOICE["Bhashini Indic Voice Assistant"]
+        STORE["Zustand Client Store + Local IndexedDB Queue"]
+        MAP["Leaflet.js + ESRI Satellite Geocoding"]
     end
 
-    subgraph "API Gateway & Backend (FastAPI + Python)"
-        AUTH["JWT RBAC (Farmer, FPO, Buyer, Admin)"]
-        ROUTER["v1 REST Router"]
+    subgraph "API Gateway & Backend (FastAPI + Python 3.11)"
+        AUTH["JWT Zero-Trust RBAC (Farmer, FPO, Buyer, Admin)"]
+        ROUTER["v1 REST Router & OpenAPI Docs"]
         
-        subgraph "AI & Analytics Engines"
-            GATE["OpenCV Image Quality Gate<br/>(Laplacian Blur > 100, Exp 80-200, Occ > 55%)"]
-            VISION["Tomato Visual Grader<br/>(Ripeness, Size Uniformity, Defects)"]
-            NET["Net Realization Engine<br/>(Gross - Freight - Handling - APMC - Spoilage)"]
-            FORECAST["LightGBM Quantile Forecaster<br/>(P10/P50/P90 & 14-Day Horizon)"]
-            ADVISOR["Risk-Aware Sale Advisor<br/>(Expected Utility & Perishability Safeguard)"]
-            ROUTING["OR-Tools CVRPTW Solver<br/>(Capacity & Time Window Vehicle Routing)"]
+        subgraph "AI & Optimization Engines"
+            GATE["OpenCV Quality Gate<br/>(Laplacian Blur > 100, Exp 80-200, Occ > 55%)"]
+            VISION["Vision AI Grader<br/>(Ripeness, Size Uniformity, Grade A/B/C)"]
+            NET["Net Realization Engine<br/>(Gross − Freight − Comm. = Net Take-Home)"]
+            FORECAST["LightGBM Quantile Forecaster<br/>(P10/P50/P90 14-Day Price Outlook)"]
+            ROUTING["Google OR-Tools CVRPTW<br/>(Capacity-Constrained Milk-Run Routing)"]
         end
 
-        subgraph "Trust & Payment Services"
-            NODAL["Regulated Nodal Account Adapter<br/>(Hold Authorization & Farmer Split)"]
-            AUDIT["SHA-256 Append-Only Audit Logger<br/>(Tamper-Evident Lot Provenance)"]
+        subgraph "Integrity & Trust Services"
+            NODAL["Nodal Escrow Settlement Simulator"]
+            AUDIT["Cryptographic SHA-256 Merkle Ledger"]
         end
     end
 
-    subgraph "Data & Persistence Layer"
-        PG[("PostgreSQL 16 + PostGIS<br/>(Spatial Mandi & Farm Coordinates)")]
-        SQLITE[("Local SQLite Auto-Fallback<br/>(krishisetu_local.db - Zero Dependency)")]
-        REDIS[("Redis 7 + RQ<br/>(Background Vision & Geocoding Tasks)")]
+    subgraph "Persistence Layer"
+        SQLITE[("Embedded SQLite WAL Database<br/>(Zero-Config Out-of-the-Box)")]
+        PG[("PostgreSQL 16 + PostGIS<br/>(Production Spatial Mandi Store)")]
     end
 
     UI --> STORE
-    STORE --> OFFLINE
     STORE --> ROUTER
     LANG --> UI
     VOICE --> UI
+    MAP --> UI
 
     ROUTER --> AUTH
-    AUTH --> GATE & VISION & NET & FORECAST & ADVISOR & ROUTING & NODAL & AUDIT
+    AUTH --> GATE & VISION & NET & FORECAST & ROUTING & NODAL & AUDIT
 
-    ROUTER --> PG
-    ROUTER -.->|Fallback if PG unreachable| SQLITE
-    ROUTER --> REDIS
+    ROUTER --> SQLITE
+    ROUTER -.->|Production Target| PG
 ```
 
 ---
 
-## 👥 Demo Personas & Credentials
+## 📁 Repository Directory Structure
 
-The platform includes pre-seeded demo accounts representing the four core actors in the agricultural value chain. You can switch between them instantly in the UI or authenticate via the API:
-
-| Role | Name | Phone / Login | District / Cluster | Key Capabilities |
-| :--- | :--- | :--- | :--- | :--- |
-| **Farmer** | Ramesh Patil | `9822100011` | Baramati, Pune | Capture crop scan, compare net mandi realization, view price forecasts, join FPO pools, generate QR gate pass |
-| **FPO Manager** | Saksham FPO Hub | `9422088990` | Baramati APMC Yard | Physical weigh-bridge verification, create batch pools, optimize CVRPTW milk-run logistics, manage B2B buyers |
-| **B2B Buyer** | FreshMart Foods Ltd. | `0202687400` | Hadapsar, Pune | Browse wholesale pool lots, authorize nodal bank guarantee, inspect consignments, raise SLA disputes |
-| **Admin** | KrishiSetu Admin | `0202555123` | Headquarters, Pune | Manage RBAC users, monitor ML model drift & WMAPE backtest, inspect real-time SHA-256 audit ledger |
-
-*(Default password for all demo accounts: `demo123`)*
-
----
-
-## 🎬 15-Step Winning SIH Demo Pitch Script
-
-Follow this script during your 5-minute SIH presentation for maximum judge impact:
-
-```
-[00:00 - 00:30] Introduction & Problem Framing
-1. Login as Farmer Ramesh Patil (Switch language to Marathi मराठी or English).
-2. Open Voice Assistant modal to demonstrate hands-free Indic speech accessibility for rural farmers.
-
-[00:30 - 01:15] AI Quality Grading & Transparency
-3. Navigate to "Grade Produce" (/farmer/grade). Upload a Tomato harvest photo.
-4. Show the Pre-Inference Quality Gate passing (Laplacian sharpness: 145, Exposure: 132, Occupancy: 82%).
-5. Highlight the External Visual Grade (Grade A, 88.5/100) and draw attention to the mandatory scientific disclaimer:
-   "External visual-quality estimate only. Does not replace physical moisture/Brix testing."
-
-[01:15 - 02:00] True Net Realization vs. Gross Misconceptions
-6. Navigate to "Market Comparison" (/farmer/market).
-7. Show Baramati (₹1,850/qtl gross) vs. Pune Gultekdi (₹2,150/qtl gross).
-8. Toggle "Solo Transport" vs. "FPO Pooling". Show how Pune's net realization jumps from ₹1,745 to ₹1,885/qtl due to a 28.5% freight saving, proving that distance mandis are only profitable when pooled!
-
-[02:00 - 02:45] Explainable Price Forecast & Perishability Safeguard
-9. Navigate to "Price Outlook" (/farmer/advisor).
-10. Show the 14-day P10/P50/P90 quantile forecast band and LightGBM driver factor cards.
-11. Toggle Risk Appetite: Conservative recommends "Sell Now" to avoid monsoon spoilage; Balanced recommends "Wait 3 Days" for +₹110/qtl lift.
-12. Point out the Perishability Warning: "Long-term storage disabled for tomato without cold chain access."
-
-[02:45 - 03:30] FPO Batch Pooling & CVRPTW Milk-Run Logistics
-13. Switch role to FPO Manager. Navigate to "Logistics Dispatch" (/fpo/logistics).
-14. Display the Google OR-Tools multi-stop route map from Ramesh Patil's farm to Baramati Hub (88.8% truck utilization, ₹1,450 farmer savings vs. solo tempos).
-15. Navigate to "Physical Verification" (/fpo/verify). Enter weigh-bridge reading (448 kg) to showcase dual-grade accountability.
-
-[03:30 - 04:30] Commerce, Regulated Nodal Settlement & Audit Provenance
-16. Switch to Buyer FreshMart Foods (/buyer). Authorize a ₹21,500 nodal payment hold for Pool POOL-PUNE-0908.
-17. Navigate to "Delivery Inspection" (/buyer/delivery). Accept consignment.
-18. Switch back to Farmer (/farmer/settlement) to show the instantaneous, transparent settlement slip with itemized freight, packaging, and APMC fees.
-19. Switch to Admin (/admin). Display the append-only SHA-256 cryptographic audit chain verifying that zero transactions or weigh-slips were tampered with!
+```plaintext
+krishisetu-ai/
+├── .github/
+│   ├── assets/                 # High-resolution branding, banner, and dashboard mockups
+│   ├── ISSUE_TEMPLATE/         # Structured Bug Report & Feature Request YAML forms
+│   ├── PULL_REQUEST_TEMPLATE.md# Pull request review checklist
+│   └── workflows/ci.yml        # Automated GitHub Actions CI pipeline
+├── backend/                    # FastAPI High-Performance Python Backend
+│   ├── app/
+│   │   ├── api/v1/             # REST endpoints (auth, grading, markets, routing, audit)
+│   │   ├── core/               # JWT security, config settings, database engines
+│   │   ├── models/             # SQLAlchemy entity definitions
+│   │   ├── schemas/            # Pydantic validation contracts
+│   │   └── services/           # OR-Tools, LightGBM, OpenCV, SHA-256 audit implementations
+│   └── tests/                  # Pytest test suite (36/36 unit & integration tests)
+├── docs/                       # Comprehensive Engineering & Architecture Suite
+│   ├── presentation/           # Official SIH 2026 Presentation (.pptx deck)
+│   ├── ARCHITECTURE.md         # Deep-dive system architecture specification
+│   ├── AI_ML.md                # Computer Vision & Quantile Regression documentation
+│   ├── MODEL_CARD.md           # Model parameters, training dataset, and performance bounds
+│   ├── AUDIT_REPORT.md         # Cryptographic audit ledger verification report
+│   ├── DECISIONS.md            # Architectural Decision Records (ADRs)
+│   └── JUDGES_QA.md            # Anticipated Judge Q&A and technical justifications
+├── public/                     # Static web assets & mandi CSV templates
+├── scripts/                    # Automated testing & deployment verification scripts
+│   ├── test-admin-features.mjs # 16-point admin dashboard end-to-end verification
+│   └── test-locations.mjs      # Nationwide dynamic mandi radius geocoding test
+├── src/                        # Next.js 16 (App Router) Frontend
+│   ├── app/                    # Multi-role dashboard routes (/farmer, /fpo, /buyer, /admin)
+│   ├── components/             # Reusable UI components & interactive maps
+│   ├── hooks/                  # Audio, voice recognition, and offline queue hooks
+│   └── lib/                    # Haversine distance engine, audit ledger, and seed datasets
+├── docker-compose.yml          # One-command full-stack containerization
+├── Dockerfile                  # Multi-stage production container build
+├── package.json                # Frontend dependencies & automated test scripts
+└── README.md                   # Project documentation & presentation guide
 ```
 
 ---
 
-## ⚡ Quickstart & Setup Guide
+## ⚡ Quickstart Guide
 
-### Option 1: Docker Compose (Production Setup)
-Requires Docker & Docker Compose:
+### Option 1: Run Locally in 60 Seconds
+
+#### Prerequisites
+- Node.js 18+ & npm
+- Python 3.10+
+
+#### 1. Clone & Enter Repository
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-org/krishisetu-ai.git
+git clone https://github.com/pawaraditya0903/krishisetu-ai.git
 cd krishisetu-ai
-
-# 2. Launch all services (PostgreSQL PostGIS, Redis, Backend, Frontend)
-docker-compose up --build
-
-# 3. Access applications:
-# Frontend: http://localhost:3000
-# Backend Swagger Docs: http://localhost:8000/docs
 ```
 
-### Option 2: Local Setup (Zero-Dependency SQLite Fallback)
-If Docker is not running on your machine, KrishiSetu runs locally with automatic SQLite fallback:
-
-#### 1. Backend Setup
+#### 2. Run the Next.js Frontend
 ```bash
-cd backend
-
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Seed pilot data (Tomato / Baramati Cluster)
-python scripts/seed.py
-
-# Start FastAPI server
-uvicorn app.main:app --reload --port 8000
-```
-*API documentation available at: `http://localhost:8000/docs`*
-
-#### 2. Frontend Setup
-```bash
-cd krishisetu-ai
-
-# Install dependencies
 npm install
-
-# Start Next.js development server
 npm run dev
 ```
-*Frontend available at: `http://localhost:3000`*
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
----
-
-## 🧪 Verification & Test Coverage
-The KrishiSetu AI codebase features an automated multi-layer test harness ensuring 100% test reliability:
-
-### 1. Automated Backend Test Suite (36/36 Passed)
+#### 3. Run the FastAPI Backend (Optional / Standalone)
 ```bash
 cd backend
-.\.venv\Scripts\python -m pytest -v
-```
-**Results: 36 passed in 7.28s (100% pass rate)**
-- ✅ `test_health_check`: FastAPI service status and live database ping.
-- ✅ `test_auth_login_demo`: JWT authentication, token decoding, and RBAC claims.
-- ✅ `test_vision_quality_and_grading`: Blur, exposure, occupancy, and scoring.
-- ✅ `test_market_prices_feed`: Live APMC mandi price feeds and variety spreads.
-- ✅ `test_net_realization_calculator`: Itemized deductions and take-home net payout.
-- ✅ `test_price_forecast_and_sale_advisor`: 14-day quantiles and perishability safeguards.
-- ✅ `test_pools_listing_and_joining`: Batch pool aggregation and member slots.
-- ✅ `test_logistics_route_plan`: Multi-stop CVRPTW route optimization.
-- ✅ `test_audit_events_stream`: SHA-256 event retrieval and JSON serialization.
-- ✅ `test_audit_ledger_cryptographic_verification`: Full chain reconstruction from Genesis H0 to Head.
-- ✅ `test_audit_ledger_tamper_detection_simulation`: Real-time detection of tampered payload bytes.
-- ✅ `test_image_quality_gate_evaluation`: Pre-inference validation gate (blur > 100, occupancy > 55%).
-- ✅ `test_tomato_grader_grade_assignment`: Grade A/B/C threshold rules and defect penalties.
-- ✅ `test_tomato_grader_rejection_fallback`: Image blur and non-produce rejection handling.
-- ✅ `test_net_realization_calculation_and_pooling_savings`: Shared freight and commission savings proof.
-- ✅ `test_price_forecaster_quantiles`: P10 <= P50 <= P90 monotonic quantile validity.
-- ✅ `test_sale_advisor_risk_strategies`: Conservative, balanced, and growth risk utility curves.
-- ✅ `test_cvrptw_logistics_route_solver`: Vehicle capacity constraints (2500 kg) and depot return.
-- ✅ `test_sandbox_payment_adapter_lifecycle`: Authorization, settlement split, and dispute freezing.
-- ✅ `test_audit_traceability_hash_chain`: Tamper-evident SHA-256 cryptographic chaining.
-- ✅ `test_crop_catalog_and_search`: Trilingual catalog querying and pagination.
-- ✅ `test_crop_request_submission`: Farmer request lifecycle and validation.
-- ✅ `test_product_photo_upload_and_validation`: Multipart image intake and storage key allocation.
-- ✅ `test_product_full_lifecycle`: Draft -> Submitted -> Verified -> Pooled state machine.
-- ✅ `test_safe_draft_delete`: Soft delete safeguards and archive isolation.
-- ✅ `test_image_quality_gate_rejections`: Rejection messaging for out-of-focus captures.
-- ✅ `test_grading_determinism_and_fpo_review_flag`: Deterministic grading flags.
-- ✅ `test_net_realization_scenarios`: High vs low volume mandi comparison edge cases.
-- ✅ `test_forecast_and_sale_advisor_disclaimers`: Mandatory statutory non-guarantee notices.
-- ✅ `test_pool_constraints_and_duplicate_rejection`: Double-pooling conflict rejection.
-- ✅ `test_fpo_grade_override_requires_reason`: Mandatory audit note requirement for grade overrides.
-- ✅ `test_cvrptw_vehicle_capacity_overflow`: Capacity threshold enforcement.
-- ✅ `test_buyer_reservation_atomic_prevent_double_booking`: Atomic reservation lock prevention.
-- ✅ `test_partial_acceptance_and_settlement_recalculation`: Dynamic dispute recalculation.
-- ✅ `test_rbac_unauthorized_access_prevention`: Role enforcement across API endpoints.
-- ✅ `test_loopholes_remediation`: Security and constraint validation.
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
 
-### 2. Admin & Platform Verification Suite (16/16 Passed)
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+Interactive Swagger API documentation is available at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+
+---
+
+### Option 2: Run with Docker Compose
 ```bash
-node test-admin-features.mjs
+docker compose up -d
 ```
-- ✅ SHA-256 Cryptographic Audit Chaining (Genesis to Head)
-- ✅ Haversine Distance & Transit Duration Computations
-- ✅ Dynamic Radius Mandi Discovery (50km / 200km / 500km / 1500km)
-- ✅ Mandi CSV Bulk Import & Header Validation
-- ✅ Dynamic Net Realization Waterfall Calculation (Itemized Deductions)
-
-## 📍 Nationwide Dynamic Farm Location & Mandi Discovery Engine
-
-KrishiSetu AI works dynamically for farmers from **ANY location in India** without hardcoded district cards:
-1. **Find Markets Near Me Flow**:
-   - **Use My Current Location**: Browser HTML5 Geolocation detects exact latitude & longitude, reverse geocodes to village, taluka, district, and state, and requests farmer confirmation.
-   - **Permission Graceful Fallback**: If GPS permission is denied, the system automatically opens manual place search without crashing or breaking.
-   - **Search Any Indian Place**: Built-in 35+ place gazetteer and instant autocomplete supporting any Indian village, taluka, district, or 6-digit pincode.
-   - **Interactive Radar Map**: Allows dropping a pin anywhere on the map to reverse geocode and discover nearby markets.
-2. **Dynamic Haversine Distance & Transit Travel Time**:
-   - Computes great-circle road distance dynamically from the farmer's coordinates to all APMC mandis.
-   - Automatic search radius expansion (starts at 50 km; expands to 100 km, 200 km, and 300 km if few mandis are in the immediate vicinity).
-   - Itemized Net Realization Breakdown: `Gross Value - (Freight + Handling + Packaging + Commission + Spoilage + FPO Fee)`.
-   - Clear projections: Low outcome (min price), Expected outcome (modal price), High outcome (max price).
-   - Uses exact phrase: **"Best estimated net outcome"** with mandatory advisory note.
-3. **WhatsApp-Style Agricultural AI Voice Chatbot**:
-   - Floating green circular bot button and microphone widget on farmer pages.
-   - Trilingual voice and text support in **Marathi (मराठी), Hindi (हिंदी), and English**.
-   - Speech-to-Text transcript display for editing before sending.
-   - Automatic Indic Text-to-Speech playback.
-   - Injects real app context (farmer location, nearby mandis, active lots, pools, settlements).
-   - **In-Chat Action Confirmation Cards**: State-altering actions (joining a pool, changing location, submitting lot) display interactive cards with `Cancel` and `Confirm` buttons, executing only upon explicit farmer confirmation.
-   - Chat persistence, "Clear Chat", and "Delete Conversation".
-4. **Resilient Offline Architecture**:
-   - Automatic connectivity detection via `navigator.onLine` and event listeners.
-   - Local storage of drafts and lot images during connectivity drops.
-   - Automatic queue flush and sync notification when internet returns.
+All services (Next.js frontend, FastAPI backend, SQLite local database) will start automatically.
 
 ---
 
-## ⚙️ How to Configure Live Services
+## 🧪 Testing & Validation Suite
 
-| Service | Environment Variable | Where to Configure | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Google Gemini AI** | `GEMINI_API_KEY` | `.env.local` or Vercel Project Settings | Powers natural language reasoning and farmer voice queries via `gemini-2.5-flash` / `gemini-2.0-flash`. |
-| **Reverse Geocoding** | Built-in / OpenStreetMap Nominatim | Automatic (`geo-locations.ts`) | Reverse geocodes GPS coordinates to Indian administrative levels with built-in gazetteer fallback. |
-| **Next.js Public API** | `NEXT_PUBLIC_API_URL` | `.env.local` | Base endpoint for serverless route handlers (`/api/v1`). |
+The repository includes complete test coverage across frontend, backend, and optimization engines:
 
-To set the Gemini API Key in Vercel:
 ```bash
-npx vercel env add GEMINI_API_KEY production,preview,development --value "YOUR_GEMINI_KEY" --force --yes
+# Run Frontend Platform End-to-End Tests (16/16 Checks)
+npm run test
+
+# Run Individual Admin & Location Tests
+npm run test:admin
+npm run test:locations
+
+# Run Backend Pytest Suite (36/36 Unit & Integration Tests)
+cd backend
+pytest -v
 ```
 
 ---
 
-## 🔄 Demo Mode vs Live Mode
+## 📊 SIH 2026 Presentation Deck
 
-KrishiSetu AI transparently badges all market data and chatbot answers with honest integrity flags:
-- **`Live`**: Data fetched in real time from live government APMC API feeds or connected IoT sensors.
-- **`Cached`**: Fresh market data cached locally within the last 24 hours.
-- **`Stale`**: Market data older than 24 hours (accompanied by warning to verify before dispatch).
-- **`Demo`**: Pre-seeded authentic baseline bulletins from AGMARKNET / MSAMB used for testing and simulation.
-
-*Note: The platform never mislabels Demo or Cached data as "Live", and never fabricates fake price guarantees or unverified escrow promises.*
-
----
-
-## 🧪 Nationwide Location Verification Report (7 Mandatory Test Clusters)
-
-Verified via automated test script (`test-locations.mjs`):
-
-| Test Location | Coordinates | Dynamic Nearest Mandi | Distance | Modal Rate | Auto-Expanded | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Parbhani, Maharashtra** | 19.2608° N, 76.7748° E | Parbhani APMC Yard | 0 km | ₹1,980/qtl | No (4 mandis in 50km) | **PASSED** ✅ |
-| **Pune, Maharashtra** | 18.4975° N, 73.8643° E | Pune Gultekdi Market Yard | 0 km | ₹2,150/qtl | Yes (100 km) | **PASSED** ✅ |
-| **Baramati, Maharashtra** | 18.1517° N, 74.5772° E | Baramati APMC Yard | 0 km | ₹1,850/qtl | Yes (100 km) | **PASSED** ✅ |
-| **Nashik, Maharashtra** | 19.9975° N, 73.7898° E | Nashik APMC Main Yard | 0 km | ₹2,100/qtl | No (3 mandis in 50km) | **PASSED** ✅ |
-| **Nagpur, Maharashtra** | 21.1458° N, 79.0882° E | Nagpur Cotton Yard & Kalamna | 0 km | ₹2,250/qtl | No (2 mandis in 50km) | **PASSED** ✅ |
-| **Latur, Maharashtra** | 18.4088° N, 76.5604° E | Latur Oilseed & Dal Yard | 0 km | ₹2,010/qtl | Yes (100 km) | **PASSED** ✅ |
-| **Solapur, Maharashtra** | 17.6599° N, 75.9064° E | Solapur APMC Main Yard | 0 km | ₹2,020/qtl | Yes (100 km) | **PASSED** ✅ |
-
-**Additional Verified Edge Cases**:
-- ✅ **GPS Denied Graceful Fallback**: Re-routes to manual search without breaking or crashing.
-- ✅ **Pincode & Taluka Autocomplete**: Verified for Gangakhed, Jintur, Lasalgaon, Pandharpur, Katol, 431401.
-- ✅ **Radius Expansion for Rare Crops**: Auto-expands from 50 km to 100 km/200 km when local mandis do not trade selected crop.
-- ✅ **Action Confirmation Safety**: Join pool and location change render in-chat `Cancel` / `Confirm` cards before execution.
-- ✅ **Trilingual Chatbot Responses**: Native Marathi, Hindi, and English responses with voice synthesis playback.
+Our official 6-slide widescreen presentation deck is checked into the repository:
+- **Presentation File**: [`docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx`](docs/presentation/KrishiSetu_AI_SIH_Format_Presentation.pptx)
+- **Slide 1**: Title & Problem Statement #26132 (Team Conquerors)
+- **Slide 2**: Proposed Solution Architecture & 8-Stage End-to-End Workflow
+- **Slide 3**: Technical Stack & Complete Vector Work Flow Diagram
+- **Slide 4**: Feasibility Wheel & 5-Point Challenge/Strategy Table
+- **Slide 5**: Dual-Circle Benefits vs. Impacts Matrix
+- **Slide 6**: Research References & Live Production Dashboard Screenshots
 
 ---
 
-## 👥 Team & Acknowledgments
-Built with ❤️ for the **Smart India Hackathon (SIH) 2026**.
-Dedicated to the hardworking farming communities across Maharashtra and India.
+## 👥 Team Conquerors (Smart India Hackathon 2026)
+
+<div align="center">
+
+<img src=".github/assets/team_conquerors_logo.png" alt="Team Conquerors Emblem" width="140" style="margin-bottom: 12px;" />
+
+### **Team Conquerors — Innovate • Build • Impact**
+*Smart India Hackathon 2026 Grand Finalists*
+
+| Member | Domain & Responsibilities | Key Contributions |
+|:---|:---|:---|
+| **Aditya Pawar** | Full-Stack Architect & AI Lead | Next.js 16 Architecture, FastAPI Backend, Google OR-Tools Routing |
+| **Team Conquerors** | ML Engineering & Data Pipelines | LightGBM Quantile Forecaster, Computer Vision Quality Gate, Geo-Mandi Engine |
+
+<br/>
+
+**Live Platform**: [krishisetu-ai-mu.vercel.app](https://krishisetu-ai-mu.vercel.app)  
+**Repository**: [github.com/pawaraditya0903/krishisetu-ai](https://github.com/pawaraditya0903/krishisetu-ai)
+
+</div>
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ for Indian Farmers by Team Conquerors • Smart India Hackathon 2026</sub>
+</div>

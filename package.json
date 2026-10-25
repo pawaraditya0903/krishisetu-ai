@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node scripts/test-admin-features.mjs",
+    "test:admin": "node scripts/test-admin-features.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
