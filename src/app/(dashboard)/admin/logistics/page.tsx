@@ -155,6 +155,61 @@ export default function AdminLogisticsPage() {
         </Button>
       </div>
 
+      {/* ONDC Beckn Protocol Open Logistics Gateway */}
+      <Card className="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-purple-50/70 border-blue-200 shadow-xs">
+        <CardContent className="p-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-sm text-slate-900">
+                  ONDC Beckn Protocol Logistics Gateway
+                </h3>
+                <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-[10px]">
+                  Beckn v1.2.0 BAP Ready
+                </Badge>
+                <Badge className="bg-emerald-100 text-emerald-800 border-none text-[10px]">
+                  ● Gateway Live
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+                Decentralized logistics partner integration: Dynamically discovers and dispatches orders across 
+                open network carriers (<strong>Delhivery Rural Agri</strong>, <strong>Shadowfax Agro</strong>, and <strong>Sahyadri Transporter Pool</strong>). 
+                Eliminates middleman dependency without platform capital expenditure on commercial trucks.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="text-right text-xs">
+                <span className="text-slate-500 block text-[10px]">BAP Endpoint</span>
+                <code className="text-[11px] font-mono font-semibold text-blue-900 bg-white px-2 py-0.5 rounded border border-blue-200">
+                  bap.krishisetu.agri.org
+                </code>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-blue-200/60 text-xs">
+            <div className="bg-white/80 p-2.5 rounded-lg border border-blue-100">
+              <span className="text-slate-500 text-[10px] block">Discovered BPP Carrier 1</span>
+              <strong className="text-slate-900 font-semibold block">Delhivery Rural Agri Logistics</strong>
+              <span className="text-[10px] text-emerald-700">✓ Perishable Cold Chain • ₹14.50/km</span>
+            </div>
+            <div className="bg-white/80 p-2.5 rounded-lg border border-blue-100">
+              <span className="text-slate-500 text-[10px] block">Discovered BPP Carrier 2</span>
+              <strong className="text-slate-900 font-semibold block">Sahyadri FPO Transporter Pool</strong>
+              <span className="text-[10px] text-blue-700">✓ Shared CVRPTW Freight • ₹11.20/km</span>
+            </div>
+            <div className="bg-white/80 p-2.5 rounded-lg border border-blue-100">
+              <span className="text-slate-500 text-[10px] block">Discovered BPP Carrier 3</span>
+              <strong className="text-slate-900 font-semibold block">Shadowfax Agro Haul</strong>
+              <span className="text-[10px] text-purple-700">✓ Inter-District Linehaul • ₹15.00/km</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Search Bar */}
       <Card className="bg-white border-slate-200 shadow-xs">
         <CardContent className="p-4">
