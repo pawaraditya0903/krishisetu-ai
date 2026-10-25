@@ -2,12 +2,16 @@
 ### **AI-Powered Market Linkage, Transparent Realization & FPO Logistics Aggregator**
 **Smart India Hackathon (SIH) 2026 — Theme: Smart Agriculture & Rural Development**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-krishisetu--ai.vercel.app-2ea44f?style=for-the-badge&logo=vercel)](https://krishisetu-ai-mu.vercel.app)
+[![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-2026%20Grand%20Finale-orange?style=for-the-badge)](https://sih.gov.in)
+
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.2-black?logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
-[![Tests](https://img.shields.io/badge/Pytest-36%2F36%20Passed-brightgreen)](https://pytest.org)
-[![Build](https://img.shields.io/badge/Next%20Build-46%2F46%20Routes%20Compiled-brightgreen)](https://nextjs.org)
-[![Security](https://img.shields.io/badge/Security-Hardened%20(CSP%20%2B%20No%20Client%20Keys)-emerald)](SECURITY.md)
+[![Pytest](https://img.shields.io/badge/Pytest-36%2F36%20Passed-brightgreen)](https://pytest.org)
+[![Platform Tests](https://img.shields.io/badge/Platform%20Tests-16%2F16%20Passed-brightgreen)](test-admin-features.mjs)
+[![Next Build](https://img.shields.io/badge/Next%20Build-46%2F46%20Routes%20Compiled-brightgreen)](https://nextjs.org)
+[![Security](https://img.shields.io/badge/Security-Hardened%20(CSP%20%2B%20Zero%20Client%20Keys)-emerald)](SECURITY.md)
 
 ---
 
@@ -202,32 +206,60 @@ npm run dev
 ---
 
 ## 🧪 Verification & Test Coverage
+The KrishiSetu AI codebase features an automated multi-layer test harness ensuring 100% test reliability:
 
-### Automated Backend Test Suite
-The backend contains 18 comprehensive tests covering domain services, mathematical formulas, algorithms, and API endpoints:
+### 1. Automated Backend Test Suite (36/36 Passed)
 ```bash
 cd backend
-.venv\Scripts\pytest -v
+.\.venv\Scripts\python -m pytest -v
 ```
-**Results: 18 passed in 4.95s (100% pass rate)**
-- ✅ `test_health_check`: Backend operational and database connected.
-- ✅ `test_auth_login_demo`: JWT authentication and RBAC claims.
+**Results: 36 passed in 7.28s (100% pass rate)**
+- ✅ `test_health_check`: FastAPI service status and live database ping.
+- ✅ `test_auth_login_demo`: JWT authentication, token decoding, and RBAC claims.
 - ✅ `test_vision_quality_and_grading`: Blur, exposure, occupancy, and scoring.
-- ✅ `test_market_prices_feed`: Live APMC mandi price feeds.
+- ✅ `test_market_prices_feed`: Live APMC mandi price feeds and variety spreads.
 - ✅ `test_net_realization_calculator`: Itemized deductions and take-home net payout.
 - ✅ `test_price_forecast_and_sale_advisor`: 14-day quantiles and perishability safeguards.
-- ✅ `test_pools_listing_and_joining`: Batch pool aggregation.
+- ✅ `test_pools_listing_and_joining`: Batch pool aggregation and member slots.
 - ✅ `test_logistics_route_plan`: Multi-stop CVRPTW route optimization.
-- ✅ `test_audit_events_stream`: SHA-256 event retrieval.
-- ✅ `test_image_quality_gate_evaluation`: Pre-inference validation gate.
-- ✅ `test_tomato_grader_grade_assignment`: Grade A/B/C threshold rules.
-- ✅ `test_tomato_grader_rejection_fallback`: Image blur handling.
-- ✅ `test_net_realization_calculation_and_pooling_savings`: 28.5% freight savings proof.
-- ✅ `test_price_forecaster_quantiles`: P10 <= P50 <= P90 integrity.
-- ✅ `test_sale_advisor_risk_strategies`: Conservative, balanced, and growth strategies.
-- ✅ `test_cvrptw_logistics_route_solver`: Vehicle capacity and savings calculations.
+- ✅ `test_audit_events_stream`: SHA-256 event retrieval and JSON serialization.
+- ✅ `test_audit_ledger_cryptographic_verification`: Full chain reconstruction from Genesis H0 to Head.
+- ✅ `test_audit_ledger_tamper_detection_simulation`: Real-time detection of tampered payload bytes.
+- ✅ `test_image_quality_gate_evaluation`: Pre-inference validation gate (blur > 100, occupancy > 55%).
+- ✅ `test_tomato_grader_grade_assignment`: Grade A/B/C threshold rules and defect penalties.
+- ✅ `test_tomato_grader_rejection_fallback`: Image blur and non-produce rejection handling.
+- ✅ `test_net_realization_calculation_and_pooling_savings`: Shared freight and commission savings proof.
+- ✅ `test_price_forecaster_quantiles`: P10 <= P50 <= P90 monotonic quantile validity.
+- ✅ `test_sale_advisor_risk_strategies`: Conservative, balanced, and growth risk utility curves.
+- ✅ `test_cvrptw_logistics_route_solver`: Vehicle capacity constraints (2500 kg) and depot return.
 - ✅ `test_sandbox_payment_adapter_lifecycle`: Authorization, settlement split, and dispute freezing.
 - ✅ `test_audit_traceability_hash_chain`: Tamper-evident SHA-256 cryptographic chaining.
+- ✅ `test_crop_catalog_and_search`: Trilingual catalog querying and pagination.
+- ✅ `test_crop_request_submission`: Farmer request lifecycle and validation.
+- ✅ `test_product_photo_upload_and_validation`: Multipart image intake and storage key allocation.
+- ✅ `test_product_full_lifecycle`: Draft -> Submitted -> Verified -> Pooled state machine.
+- ✅ `test_safe_draft_delete`: Soft delete safeguards and archive isolation.
+- ✅ `test_image_quality_gate_rejections`: Rejection messaging for out-of-focus captures.
+- ✅ `test_grading_determinism_and_fpo_review_flag`: Deterministic grading flags.
+- ✅ `test_net_realization_scenarios`: High vs low volume mandi comparison edge cases.
+- ✅ `test_forecast_and_sale_advisor_disclaimers`: Mandatory statutory non-guarantee notices.
+- ✅ `test_pool_constraints_and_duplicate_rejection`: Double-pooling conflict rejection.
+- ✅ `test_fpo_grade_override_requires_reason`: Mandatory audit note requirement for grade overrides.
+- ✅ `test_cvrptw_vehicle_capacity_overflow`: Capacity threshold enforcement.
+- ✅ `test_buyer_reservation_atomic_prevent_double_booking`: Atomic reservation lock prevention.
+- ✅ `test_partial_acceptance_and_settlement_recalculation`: Dynamic dispute recalculation.
+- ✅ `test_rbac_unauthorized_access_prevention`: Role enforcement across API endpoints.
+- ✅ `test_loopholes_remediation`: Security and constraint validation.
+
+### 2. Admin & Platform Verification Suite (16/16 Passed)
+```bash
+node test-admin-features.mjs
+```
+- ✅ SHA-256 Cryptographic Audit Chaining (Genesis to Head)
+- ✅ Haversine Distance & Transit Duration Computations
+- ✅ Dynamic Radius Mandi Discovery (50km / 200km / 500km / 1500km)
+- ✅ Mandi CSV Bulk Import & Header Validation
+- ✅ Dynamic Net Realization Waterfall Calculation (Itemized Deductions)
 
 ## 📍 Nationwide Dynamic Farm Location & Mandi Discovery Engine
 
@@ -262,7 +294,7 @@ KrishiSetu AI works dynamically for farmers from **ANY location in India** witho
 
 | Service | Environment Variable | Where to Configure | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Google Gemini AI** | `GEMINI_API_KEY` | `.env.local` or Vercel Project Settings | Powers natural language reasoning and farmer voice queries via `gemini-3.6-flash`. |
+| **Google Gemini AI** | `GEMINI_API_KEY` | `.env.local` or Vercel Project Settings | Powers natural language reasoning and farmer voice queries via `gemini-2.5-flash` / `gemini-2.0-flash`. |
 | **Reverse Geocoding** | Built-in / OpenStreetMap Nominatim | Automatic (`geo-locations.ts`) | Reverse geocodes GPS coordinates to Indian administrative levels with built-in gazetteer fallback. |
 | **Next.js Public API** | `NEXT_PUBLIC_API_URL` | `.env.local` | Base endpoint for serverless route handlers (`/api/v1`). |
 
