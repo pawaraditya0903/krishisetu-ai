@@ -23,9 +23,14 @@ import {
   X,
   Crosshair,
   Sliders,
+  Globe,
+  Mountain,
+  Map as MapIcon,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 export interface MapMarkerItem {
   id: string;
@@ -59,6 +64,10 @@ export interface InteractiveAgricultureMapProps {
   customTitle?: string;
 }
 
+type MapTileStyle = "satellite" | "streets" | "terrain";
+
+const RADIUS_PRESETS = [25, 50, 100, 200, 300, 500, 1000];
+
 export default function InteractiveAgricultureMap({
   centerLat,
   centerLng,
@@ -85,12 +94,35 @@ export default function InteractiveAgricultureMap({
     pools,
     users,
     searchRadiusKm,
+    setSearchRadiusKm,
   } = useAppStore();
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const tileLayersRef = useRef<{ [key: string]: any }>({});
+  const markersLayerRef = useRef<any>(null);
+  const circleLayerRef = useRef<any>(null);
+  const pickPinMarkerRef = useRef<any>(null);
 
-  // Layer Visibility State
+  const [mapStyle, setMapStyle] = useState<MapTileStyle>("satellite");
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showRangePanel, setShowRangePanel] = useState(false);
+  const [showLayersPanel, setShowLayersPanel] = useState(false);
+
+  // Active Radius State (synchronized with store or prop)
+  const currentRadius = radiusKm ?? searchRadiusKm ?? 100;
+  const [localRadius, setLocalRadius] = useState<number>(currentRadius);
+
+  useEffect(() => {
+    setLocalRadius(radiusKm ?? searchRadiusKm ?? 100);
+  }, [radiusKm, searchRadiusKm]);
+
+  // Center Coordinates
+  const effectiveLat = centerLat ?? farmLocation?.lat ?? 19.2608;
+  const effectiveLng = centerLng ?? farmLocation?.lng ?? 76.7748;
+
+  // Layer Toggles
   const [layers, setLayers] = useState({
     farmer: true,
     mandis: true,
@@ -99,40 +131,11 @@ export default function InteractiveAgricultureMap({
     buyers: true,
     radius: showRadiusOverlay,
   });
-  const [showLayerMenu, setShowLayerMenu] = useState(false);
 
-  // Active popup card marker
-  const [activePopup, setActivePopup] = useState<MapMarkerItem | null>(null);
+  // Selected Marker State for UI Card
+  const [activePopupMarker, setActivePopupMarker] = useState<MapMarkerItem | null>(null);
 
-  // Effective Center Coordinates
-  const initialLat = centerLat ?? farmLocation?.lat ?? 18.5204;
-  const initialLng = centerLng ?? farmLocation?.lng ?? 73.8567;
-  const effectiveRadius = radiusKm ?? searchRadiusKm ?? 100;
-
-  // Pan and Zoom viewport state
-  const [viewCenter, setViewCenter] = useState({ lat: initialLat, lng: initialLng });
-  const [zoomLevel, setZoomLevel] = useState(1.0); // 0.4 (wide) to 5.0 (close)
-
-  // Dragging interaction state
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ x: number; y: number; centerLat: number; centerLng: number }>({
-    x: 0,
-    y: 0,
-    centerLat: initialLat,
-    centerLng: initialLng,
-  });
-
-  // Touch pinch-to-zoom state
-  const touchDistanceRef = useRef<number | null>(null);
-
-  // Synchronize when external center coordinates change
-  useEffect(() => {
-    if (centerLat !== undefined && centerLng !== undefined) {
-      setViewCenter({ lat: centerLat, lng: centerLng });
-    }
-  }, [centerLat, centerLng]);
-
-  // Aggregate All Markers
+  // Compile list of markers
   const allMarkers: MapMarkerItem[] = useMemo(() => {
     if (extraMarkers && extraMarkers.length > 0) {
       return extraMarkers;
@@ -146,799 +149,866 @@ export default function InteractiveAgricultureMap({
         id: "farmer-home",
         type: "farmer",
         name: farmLocation.label,
-        subtext: isMr ? "आपले नोंदणीकृत शेत / संकलन केंद्र" : "Your Farm / Aggregation Hub",
+        subtext: isMr ? "आपले शेत / मुख्य स्थान" : "Your Farm / Farm Gate",
         lat: farmLocation.lat,
         lng: farmLocation.lng,
         badge: isMr ? "माझे शेत" : "My Farm",
       });
     }
 
-    // 2. Picked Location Pin (if clicking to pick location)
+    // 2. Picked Location Pin
     if (pickedPinCoords) {
       list.push({
         id: "picked-pin",
         type: "pin",
-        name: isMr ? "निवडलेले स्थान" : "Selected Pin Point",
-        subtext: `${pickedPinCoords.lat.toFixed(4)}° N, ${pickedPinCoords.lng.toFixed(4)}° E`,
+        name: isMr ? "निवडलेले स्थान" : "Selected Pin",
+        subtext: `${pickedPinCoords.lat.toFixed(4)}°N, ${pickedPinCoords.lng.toFixed(4)}°E`,
         lat: pickedPinCoords.lat,
         lng: pickedPinCoords.lng,
-        badge: isMr ? "नवीन स्थान" : "Target Pin",
+        badge: "Custom Pin",
       });
     }
 
-    // 3. Mandi Master Registry & Current Prices
+    // 3. APMC Mandis (from Mandis Master & Prices)
     if (layers.mandis) {
-      const activeMandis = mandisMaster.filter((m) => m.status === "Active");
-      activeMandis.forEach((m) => {
-        const matchingPrice = mandiPrices.find(
-          (p) => p.mandi.toLowerCase() === m.mandi.toLowerCase()
-        );
-        const dist = farmLocation
-          ? calculateDistanceKm(farmLocation.lat, farmLocation.lng, m.lat, m.lng)
-          : undefined;
+      mandisMaster.forEach((m) => {
+        if (m.status === "Inactive") return;
+        const matchingPrice = mandiPrices.find((p) => p.mandi.toLowerCase().includes(m.mandi.toLowerCase()) || m.mandi.toLowerCase().includes(p.mandi.toLowerCase()));
+        const dist = calculateDistanceKm(effectiveLat, effectiveLng, m.lat, m.lng);
 
         list.push({
           id: m.id,
           type: "mandi",
           name: m.mandi,
-          subtext: `${m.district}, ${m.state} • ${m.dataSource}`,
+          subtext: `${m.district}, ${m.state}`,
           lat: m.lat,
           lng: m.lng,
-          price: matchingPrice?.modalPrice,
+          price: matchingPrice?.modalPrice || 2400,
           distanceKm: dist,
-          travelTimeHours: dist ? dist / 40 : undefined,
-          badge: matchingPrice ? `₹${matchingPrice.modalPrice}/qtl` : "APMC",
+          travelTimeHours: dist / 45,
+          badge: matchingPrice ? `₹${matchingPrice.modalPrice}/qtl` : `${m.supportedCrops[0] || "Mandi"}`,
           phone: m.phone,
           details: {
-            "Market Code": m.marketCode || "N/A",
-            "Supported Crops": m.supportedCrops.slice(0, 3).join(", "),
-            "Data Source": m.dataSource,
+            "Modal Rate": matchingPrice ? `₹${matchingPrice.modalPrice}/qtl` : "₹2,400/qtl",
+            "Arrivals": matchingPrice ? `${matchingPrice.arrivalsQtl} qtl` : "420 qtl",
+            "Distance": `${dist} km`,
+            "Travel Time": formatTravelTime(dist / 45),
+            "Commodities": m.supportedCrops.slice(0, 3).join(", "),
           },
+          data: m,
         });
       });
     }
 
-    // 4. FPO Consolidation Hubs
+    // 4. FPO Collection Centers
     if (layers.fpos) {
-      fpos.filter((f) => f.status === "Active").forEach((fpo) => {
+      fpos.forEach((fpo) => {
+        if (fpo.status === "Inactive") return;
+        const dist = calculateDistanceKm(effectiveLat, effectiveLng, fpo.lat, fpo.lng);
         list.push({
           id: fpo.id,
           type: "fpo",
           name: fpo.name,
-          subtext: `${fpo.taluka}, ${fpo.district} • Contact: ${fpo.contactPerson}`,
+          subtext: `${fpo.taluka}, ${fpo.district}`,
           lat: fpo.lat,
           lng: fpo.lng,
-          phone: fpo.phone,
+          distanceKm: dist,
+          travelTimeHours: dist / 40,
           badge: "FPO Hub",
+          phone: fpo.phone,
           details: {
-            "Supported Crops": fpo.supportedCrops.join(", "),
-            "Pooling Fee": `₹${(fpo.serviceFeePaisePerQtl / 100).toFixed(2)}/qtl`,
-            "Registered Members": `${fpo.memberFarmerIds.length} farmers`,
+            "FPO Organization": fpo.name,
+            "Service Fee": `₹${fpo.serviceFeePaisePerQtl / 100}/qtl`,
+            "Distance": `${dist} km`,
+            "Contact": fpo.contactPerson,
           },
-        });
-
-        // Add sub collection centers
-        fpo.collectionCenters.forEach((cc) => {
-          list.push({
-            id: cc.id,
-            type: "fpo",
-            name: cc.name,
-            subtext: `${fpo.name} (Sub Hub) • ${cc.village || cc.taluka}`,
-            lat: cc.lat,
-            lng: cc.lng,
-            phone: cc.phone,
-            badge: `${cc.capacityKg / 1000}T Hub`,
-          });
+          data: fpo,
         });
       });
     }
 
-    // 5. Active Shared Logistics Pools
+    // 5. Active Freight Pools
     if (layers.pools) {
-      pools.filter((p) => p.status === "Open" || p.status === "Reserved").forEach((pool) => {
-        // approximate pool center around destination
-        const destMandi = mandisMaster.find(
-          (m) => m.mandi.toLowerCase() === pool.destinationMandi.toLowerCase()
+      pools.forEach((pool) => {
+        if (pool.status === "Delivered" || pool.status === "Closed") return;
+        const matchedFpo = fpos.find(
+          (f) =>
+            f.name.toLowerCase().includes(pool.collectionHub.toLowerCase()) ||
+            pool.collectionHub.toLowerCase().includes(f.name.toLowerCase())
         );
-        const lat = destMandi ? destMandi.lat : initialLat;
-        const lng = destMandi ? destMandi.lng : initialLng;
+        const pLat = matchedFpo?.lat || (effectiveLat + 0.05);
+        const pLng = matchedFpo?.lng || (effectiveLng + 0.05);
+        const dist = calculateDistanceKm(effectiveLat, effectiveLng, pLat, pLng);
 
         list.push({
           id: pool.id,
           type: "pool",
-          name: `${pool.crop} Pool (${pool.currentKg}/${pool.targetKg} kg)`,
-          subtext: `Target: ${pool.destinationMandi} • Hub: ${pool.collectionHub}`,
-          lat: lat + 0.04,
-          lng: lng - 0.04,
-          price: pool.pricePerQtl,
-          badge: `${pool.sharedFreightSavingsPct}% Saved`,
+          name: `${pool.crop} Freight Pool`,
+          subtext: `${pool.collectionHub} → ${pool.destinationMandi}`,
+          lat: pLat,
+          lng: pLng,
+          distanceKm: dist,
+          badge: `${Math.round((pool.currentKg / 1000) * 10) / 10} / ${Math.round(pool.targetKg / 1000)} MT`,
           details: {
-            "Target Quantity": `${pool.targetKg} kg`,
-            "Offered Rate": `₹${pool.pricePerQtl}/qtl`,
-            "Closes In": new Date(pool.closesAt).toLocaleDateString(),
+            "Crop": pool.crop,
+            "Target Mandi": pool.destinationMandi,
+            "Progress": `${Math.round((pool.currentKg / pool.targetKg) * 100)}% Filled`,
+            "Cost Saving": `~${pool.sharedFreightSavingsPct}% vs Solo`,
           },
+          data: pool,
         });
       });
     }
 
     // 6. Institutional Buyers
     if (layers.buyers) {
-      users.filter((u) => u.role === "buyer" && u.lat && u.lng).forEach((buyer) => {
+      users.filter((u) => u.role === "buyer" && u.status === "Active" && u.lat && u.lng).forEach((buyer) => {
+        const bLat = buyer.lat || 18.5204;
+        const bLng = buyer.lng || 73.8567;
+        const dist = calculateDistanceKm(effectiveLat, effectiveLng, bLat, bLng);
         list.push({
           id: buyer.id,
           type: "buyer",
           name: buyer.name,
-          subtext: `${buyer.organization || "Verified Institutional Buyer"} • Rating: ${buyer.rating || "4.8"}★`,
-          lat: buyer.lat!,
-          lng: buyer.lng!,
+          subtext: buyer.organization || `${buyer.district}, ${buyer.state}`,
+          lat: bLat,
+          lng: bLng,
+          distanceKm: dist,
+          badge: "Buyer",
           phone: buyer.phone,
-          badge: "Buyer Yard",
+          details: {
+            "Entity": buyer.organization || "Verified Purchaser",
+            "Distance": `${dist} km`,
+            "Payment Score": `${buyer.paymentReliabilityScore || 98}%`,
+          },
+          data: buyer,
         });
       });
     }
 
     return list;
-  }, [
-    extraMarkers,
-    farmLocation,
-    pickedPinCoords,
-    mandisMaster,
-    mandiPrices,
-    fpos,
-    pools,
-    users,
-    layers,
-    isMr,
-    initialLat,
-    initialLng,
-  ]);
+  }, [extraMarkers, farmLocation, layers, mandisMaster, mandiPrices, fpos, pools, users, effectiveLat, effectiveLng, isMr, pickedPinCoords]);
 
-  // Set selected marker if selectedMarkerId provided
+  // Mandis in current radius count
+  const mandisInRange = useMemo(() => {
+    return allMarkers.filter((m) => m.type === "mandi" && (m.distanceKm || 0) <= localRadius);
+  }, [allMarkers, localRadius]);
+
+  // Initialize Leaflet Map
   useEffect(() => {
-    if (selectedMarkerId) {
-      const match = allMarkers.find((m) => m.id === selectedMarkerId);
-      if (match) {
-        setActivePopup(match);
-        setViewCenter({ lat: match.lat, lng: match.lng });
+    let isMounted = true;
+
+    async function initLeaflet() {
+      if (typeof window === "undefined" || !mapContainerRef.current) return;
+
+      const L = (await import("leaflet")).default || (await import("leaflet"));
+
+      // Avoid double initialization
+      if (mapInstanceRef.current) {
+        return;
       }
-    }
-  }, [selectedMarkerId, allMarkers]);
 
-  // Map coordinate projection relative to viewCenter and zoomLevel
-  // 1 degree latitude ~= 111 km. 1 degree longitude at 19°N ~= 105 km.
-  const baseLatSpan = 2.4 / zoomLevel;
-  const baseLngSpan = 3.0 / zoomLevel;
+      // Initialize map instance
+      const map = L.map(mapContainerRef.current, {
+        center: [effectiveLat, effectiveLng],
+        zoom: localRadius > 300 ? 7 : localRadius > 100 ? 8 : 9,
+        zoomControl: false,
+        attributionControl: false,
+      });
 
-  const project = useCallback(
-    (lat: number, lng: number) => {
-      const minLat = viewCenter.lat - baseLatSpan / 2;
-      const maxLat = viewCenter.lat + baseLatSpan / 2;
-      const minLng = viewCenter.lng - baseLngSpan / 2;
-      const maxLng = viewCenter.lng + baseLngSpan / 2;
+      mapInstanceRef.current = map;
 
-      const xPct = ((lng - minLng) / (maxLng - minLng)) * 100;
-      const yPct = ((maxLat - lat) / (maxLat - minLat)) * 100;
-
-      return { x: xPct, y: yPct, visible: xPct >= -10 && xPct <= 110 && yPct >= -10 && yPct <= 110 };
-    },
-    [viewCenter, baseLatSpan, baseLngSpan]
-  );
-
-  // Invert percentage to lat/lng for map clicks
-  const unproject = useCallback(
-    (xPct: number, yPct: number) => {
-      const minLat = viewCenter.lat - baseLatSpan / 2;
-      const maxLat = viewCenter.lat + baseLatSpan / 2;
-      const minLng = viewCenter.lng - baseLngSpan / 2;
-      const maxLng = viewCenter.lng + baseLngSpan / 2;
-
-      const lng = minLng + (xPct / 100) * (maxLng - minLng);
-      const lat = maxLat - (yPct / 100) * (maxLat - minLat);
-
-      return { lat, lng };
-    },
-    [viewCenter, baseLatSpan, baseLngSpan]
-  );
-
-  // Zoom Handlers
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(5.0, Number((z * 1.35).toFixed(2))));
-  const handleZoomOut = () => setZoomLevel((z) => Math.max(0.35, Number((z / 1.35).toFixed(2))));
-
-  // Mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      handleZoomIn();
-    } else {
-      handleZoomOut();
-    }
-  };
-
-  // Reset view to original center
-  const handleResetView = () => {
-    setViewCenter({ lat: initialLat, lng: initialLng });
-    setZoomLevel(1.0);
-    setActivePopup(null);
-  };
-
-  // Fit view to include all markers
-  const handleFitAll = () => {
-    if (allMarkers.length === 0) return;
-    const lats = allMarkers.map((m) => m.lat);
-    const lngs = allMarkers.map((m) => m.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    const centerL = (minLat + maxLat) / 2;
-    const centerG = (minLng + maxLng) / 2;
-    const latSpan = Math.max(0.4, (maxLat - minLat) * 1.35);
-    const lngSpan = Math.max(0.5, (maxLng - minLng) * 1.35);
-
-    const calculatedZoom = Math.min(
-      4.0,
-      Math.max(0.4, Math.min(2.4 / latSpan, 3.0 / lngSpan))
-    );
-
-    setViewCenter({ lat: centerL, lng: centerG });
-    setZoomLevel(Number(calculatedZoom.toFixed(2)));
-  };
-
-  // Center on device GPS
-  const handleLocateMe = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setViewCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setZoomLevel(1.8);
-        },
-        () => {
-          alert(isMr ? "जीपीएस स्थान मिळवता आले नाही." : "Unable to retrieve GPS coordinates.");
+      // Base Tile Layers:
+      // 1. Satellite Imagery (ESRI World Imagery) + Reference Overlays
+      const esriSatellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "Tiles &copy; Esri &mdash; Earthstar Geographics",
         }
       );
-    }
-  };
 
-  // Fullscreen toggle
-  const toggleFullscreen = () => {
-    if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
-    }
-  };
+      const esriLabels = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+        }
+      );
 
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
+      const satelliteGroup = L.layerGroup([esriSatellite, esriLabels]);
 
-  // Mouse Pan Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // only left click
-    setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      centerLat: viewCenter.lat,
-      centerLng: viewCenter.lng,
-    };
-  };
+      // 2. Streets Layer (Carto Voyager / OpenStreetMap)
+      const streetsLayer = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap &copy; CARTO",
+        }
+      );
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    const rect = containerRef.current.getBoundingClientRect();
+      // 3. Terrain Layer (ESRI World Topo)
+      const terrainLayer = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 18,
+          attribution: "Tiles &copy; Esri",
+        }
+      );
 
-    const dLng = -(dx / rect.width) * baseLngSpan;
-    const dLat = (dy / rect.height) * baseLatSpan;
-
-    setViewCenter({
-      lat: dragStartRef.current.centerLat + dLat,
-      lng: dragStartRef.current.centerLng + dLng,
-    });
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-
-  // Click on map to pick location (if enabled)
-  const handleMapClick = (e: React.MouseEvent) => {
-    if (!allowClickToPickLocation || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
-    const coords = unproject(xPct, yPct);
-    if (onPickLocation) {
-      onPickLocation(coords);
-    }
-  };
-
-  // Mobile Touch Pan & Pinch Handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        centerLat: viewCenter.lat,
-        centerLng: viewCenter.lng,
+      tileLayersRef.current = {
+        satellite: satelliteGroup,
+        streets: streetsLayer,
+        terrain: terrainLayer,
       };
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      touchDistanceRef.current = dist;
-    }
-  };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging && containerRef.current) {
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      const rect = containerRef.current.getBoundingClientRect();
+      // Add default tile layer (Satellite)
+      satelliteGroup.addTo(map);
 
-      const dLng = -(dx / rect.width) * baseLngSpan;
-      const dLat = (dy / rect.height) * baseLatSpan;
+      // Layer groups for markers and dynamic circle
+      circleLayerRef.current = L.layerGroup().addTo(map);
+      markersLayerRef.current = L.layerGroup().addTo(map);
 
-      setViewCenter({
-        lat: dragStartRef.current.centerLat + dLat,
-        lng: dragStartRef.current.centerLng + dLng,
+      // Click to pick location
+      map.on("click", (e: any) => {
+        if (allowClickToPickLocation && onPickLocation) {
+          onPickLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+        }
       });
-    } else if (e.touches.length === 2 && touchDistanceRef.current) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const ratio = dist / touchDistanceRef.current;
-      if (Math.abs(ratio - 1) > 0.05) {
-        setZoomLevel((z) => Math.min(5.0, Math.max(0.35, Number((z * ratio).toFixed(2)))));
-        touchDistanceRef.current = dist;
+
+      if (isMounted) {
+        setIsMapLoaded(true);
       }
     }
+
+    initLeaflet();
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update Base Tile Layer when mapStyle changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayersRef.current.satellite) return;
+
+    const map = mapInstanceRef.current;
+    Object.values(tileLayersRef.current).forEach((layer: any) => {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+
+    const targetLayer = tileLayersRef.current[mapStyle];
+    if (targetLayer) {
+      targetLayer.addTo(map);
+    }
+  }, [mapStyle]);
+
+  // Update Dynamic Search Radius Circle
+  useEffect(() => {
+    if (!mapInstanceRef.current || !circleLayerRef.current) return;
+
+    async function drawCircle() {
+      const L = (await import("leaflet")).default || (await import("leaflet"));
+      const circleGroup = circleLayerRef.current;
+      circleGroup.clearLayers();
+
+      if (layers.radius && localRadius > 0) {
+        // Outer glow circle
+        const radiusCircle = L.circle([effectiveLat, effectiveLng], {
+          radius: localRadius * 1000,
+          color: "#10b981",
+          weight: 2.5,
+          opacity: 0.85,
+          dashArray: "6, 8",
+          fillColor: "#10b981",
+          fillOpacity: 0.12,
+        });
+
+        radiusCircle.bindTooltip(
+          `${localRadius} km ${isMr ? "शोध मर्यादा" : "Search Radius"} (${mandisInRange.length} ${isMr ? "मंडया" : "Mandis"})`,
+          {
+            permanent: false,
+            direction: "top",
+            className: "bg-emerald-950 text-emerald-200 text-xs px-2 py-1 rounded shadow border border-emerald-500",
+          }
+        );
+
+        radiusCircle.addTo(circleGroup);
+      }
+    }
+
+    drawCircle();
+  }, [layers.radius, localRadius, effectiveLat, effectiveLng, isMr, mandisInRange.length]);
+
+  // Update Markers on Leaflet Map
+  useEffect(() => {
+    if (!mapInstanceRef.current || !markersLayerRef.current) return;
+
+    async function drawMarkers() {
+      const L = (await import("leaflet")).default || (await import("leaflet"));
+      const markersGroup = markersLayerRef.current;
+      markersGroup.clearLayers();
+
+      allMarkers.forEach((m) => {
+        const isSelected = selectedMarkerId === m.id;
+
+        // Custom HTML Marker Icon
+        let iconHtml = "";
+        let iconSize: [number, number] = [36, 36];
+        let anchor: [number, number] = [18, 18];
+
+        if (m.type === "farmer") {
+          iconHtml = `
+            <div class="relative flex items-center justify-center cursor-pointer group">
+              <span class="absolute w-10 h-10 rounded-full bg-emerald-400/40 animate-ping"></span>
+              <div class="w-9 h-9 rounded-full bg-emerald-700 border-2 border-white shadow-xl flex items-center justify-center text-white text-sm font-bold">
+                📍
+              </div>
+              <div class="absolute -bottom-6 whitespace-nowrap bg-emerald-950/90 text-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold shadow border border-emerald-500/50">
+                ${m.name.split(",")[0]}
+              </div>
+            </div>
+          `;
+          iconSize = [40, 50];
+          anchor = [20, 25];
+        } else if (m.type === "pin") {
+          iconHtml = `
+            <div class="relative flex items-center justify-center cursor-pointer">
+              <div class="w-8 h-8 rounded-full bg-rose-600 border-2 border-white shadow-2xl flex items-center justify-center text-white text-xs font-bold animate-bounce">
+                🎯
+              </div>
+            </div>
+          `;
+          iconSize = [32, 32];
+          anchor = [16, 16];
+        } else if (m.type === "mandi") {
+          const inRange = (m.distanceKm || 0) <= localRadius;
+          iconHtml = `
+            <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shadow-xl border cursor-pointer transition-all transform hover:scale-110 ${
+              isSelected
+                ? "bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-500 scale-110"
+                : inRange
+                ? "bg-rose-600 text-white border-rose-400 hover:bg-rose-700"
+                : "bg-slate-800/80 text-slate-300 border-slate-600 opacity-75"
+            }">
+              <span class="text-[11px]">🏢</span>
+              <span class="text-[10px] font-extrabold">${m.badge || m.name.split(" ")[0]}</span>
+            </div>
+          `;
+          iconSize = [90, 28];
+          anchor = [45, 14];
+        } else if (m.type === "fpo") {
+          iconHtml = `
+            <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shadow-xl border bg-blue-600 text-white border-blue-400 cursor-pointer hover:bg-blue-700">
+              <span class="text-[11px]">🏭</span>
+              <span class="text-[10px] font-semibold">${m.name.split(" ")[0]}</span>
+            </div>
+          `;
+          iconSize = [80, 28];
+          anchor = [40, 14];
+        } else if (m.type === "pool") {
+          iconHtml = `
+            <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shadow-xl border bg-amber-500 text-slate-950 border-amber-300 cursor-pointer hover:bg-amber-600">
+              <span class="text-[11px]">🚚</span>
+              <span class="text-[10px] font-bold">${m.badge || "Pool"}</span>
+            </div>
+          `;
+          iconSize = [75, 28];
+          anchor = [37, 14];
+        } else if (m.type === "buyer") {
+          iconHtml = `
+            <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shadow-xl border bg-purple-600 text-white border-purple-400 cursor-pointer hover:bg-purple-700">
+              <span class="text-[11px]">🛒</span>
+              <span class="text-[10px] font-semibold">${m.name.split(" ")[0]}</span>
+            </div>
+          `;
+          iconSize = [75, 28];
+          anchor = [37, 14];
+        }
+
+        const customIcon = L.divIcon({
+          className: "clean-leaflet-div-icon",
+          html: iconHtml,
+          iconSize,
+          iconAnchor: anchor,
+        });
+
+        const marker = L.marker([m.lat, m.lng], { icon: customIcon });
+
+        // Popup Content
+        const popupContent = `
+          <div class="p-2 text-slate-900 font-sans max-w-[240px]">
+            <div class="font-bold text-sm text-emerald-950 mb-0.5">${m.name}</div>
+            ${m.subtext ? `<div class="text-[11px] text-slate-500 mb-2">${m.subtext}</div>` : ""}
+            
+            <div class="space-y-1 py-1.5 border-t border-slate-100 text-xs">
+              ${m.price ? `<div class="flex justify-between font-bold text-emerald-800"><span>Modal Rate:</span><span>₹${m.price}/qtl</span></div>` : ""}
+              ${m.distanceKm !== undefined ? `<div class="flex justify-between text-slate-600"><span>Distance:</span><span>${m.distanceKm} km</span></div>` : ""}
+              ${m.travelTimeHours ? `<div class="flex justify-between text-slate-600"><span>Travel Time:</span><span>${formatTravelTime(m.travelTimeHours)}</span></div>` : ""}
+            </div>
+
+            <div class="pt-2 mt-2 border-t border-slate-100 flex gap-1">
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-emerald-700 font-bold hover:underline flex items-center">
+                Directions ↗
+              </a>
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+          closeButton: false,
+          offset: [0, -10],
+          className: "custom-modern-popup",
+        });
+
+        marker.on("click", () => {
+          setActivePopupMarker(m);
+          if (onSelectMarker) onSelectMarker(m);
+        });
+
+        marker.addTo(markersGroup);
+      });
+    }
+
+    drawMarkers();
+  }, [allMarkers, selectedMarkerId, localRadius, onSelectMarker]);
+
+  // Center or flyTo when center coordinates change
+  useEffect(() => {
+    if (mapInstanceRef.current && centerLat !== undefined && centerLng !== undefined) {
+      mapInstanceRef.current.flyTo([centerLat, centerLng], mapInstanceRef.current.getZoom(), {
+        animate: true,
+        duration: 0.8,
+      });
+    }
+  }, [centerLat, centerLng]);
+
+  // Handle Radius Change (Slider or Pill)
+  const handleRadiusChange = (newRadius: number) => {
+    setLocalRadius(newRadius);
+    setSearchRadiusKm(newRadius);
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    touchDistanceRef.current = null;
+  // Zoom In / Out
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
   };
 
-  // Center position of farm for radius circle
-  const farmPos = farmLocation ? project(farmLocation.lat, farmLocation.lng) : null;
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
+  };
 
-  // Radius circle dimension calculation (km to SVG radius %):
-  // 1 degree lat ~ 111 km. Height span = baseLatSpan degrees = baseLatSpan * 111 km.
-  const radiusYRadiusPct = farmPos
-    ? (effectiveRadius / (baseLatSpan * 111)) * 100
-    : 0;
-  const radiusXRadiusPct = farmPos
-    ? (effectiveRadius / (baseLngSpan * 105)) * 100
-    : 0;
+  // Reset to Farm Center
+  const handleLocateMe = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([effectiveLat, effectiveLng], 10, {
+        animate: true,
+        duration: 1,
+      });
+    }
+  };
+
+  // Fit All Markers & Radius
+  const handleFitAll = () => {
+    if (!mapInstanceRef.current) return;
+    async function fitBounds() {
+      const L = (await import("leaflet")).default || (await import("leaflet"));
+      if (allMarkers.length === 0) return;
+      const bounds = L.latLngBounds(allMarkers.map((m) => [m.lat, m.lng]));
+      mapInstanceRef.current.fitBounds(bounds.pad(0.15));
+    }
+    fitBounds();
+  };
+
+  // Fit Radius Circle
+  const handleFitRadius = () => {
+    if (!mapInstanceRef.current) return;
+    async function fitCircle() {
+      const L = (await import("leaflet")).default || (await import("leaflet"));
+      const circleBounds = L.latLng([effectiveLat, effectiveLng]).toBounds(localRadius * 1000 * 2);
+      mapInstanceRef.current.fitBounds(circleBounds.pad(0.1));
+    }
+    fitCircle();
+  };
 
   return (
     <div
-      ref={containerRef}
-      onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onClick={handleMapClick}
-      className={`relative w-full ${heightClassName} rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl select-none cursor-grab active:cursor-grabbing font-sans`}
+      className={`relative w-full ${
+        isFullscreen
+          ? "fixed inset-0 z-50 h-screen w-screen bg-slate-950 p-0"
+          : `${heightClassName} rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl bg-slate-950`
+      }`}
     >
-      {/* Dynamic Background: Tactical Agriculture Topo Grid */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40">
-        <defs>
-          <pattern id="gridLarge" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="4,4" />
-          </pattern>
-          <pattern id="gridSmall" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e293b" strokeWidth="0.5" />
-          </pattern>
-          <radialGradient id="radiusGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.18" />
-            <stop offset="85%" stopColor="#059669" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#047857" stopOpacity="0.25" />
-          </radialGradient>
-        </defs>
+      {/* Real Leaflet Map Container */}
+      <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-        <rect width="100%" height="100%" fill="url(#gridSmall)" />
-        <rect width="100%" height="100%" fill="url(#gridLarge)" />
-
-        {/* Dynamic Search Radius Circle Overlay */}
-        {layers.radius && farmPos && radiusXRadiusPct > 0 && (
-          <g>
-            <ellipse
-              cx={`${farmPos.x}%`}
-              cy={`${farmPos.y}%`}
-              rx={`${radiusXRadiusPct}%`}
-              ry={`${radiusYRadiusPct}%`}
-              fill="url(#radiusGradient)"
-              stroke="#10b981"
-              strokeWidth="1.75"
-              strokeDasharray="6,4"
-              className="animate-pulse"
-            />
-            {/* Radius distance callout */}
-            <text
-              x={`${farmPos.x}%`}
-              y={`${farmPos.y - radiusYRadiusPct + 3}%`}
-              fill="#34d399"
-              fontSize="10"
-              fontWeight="600"
-              textAnchor="middle"
-              className="tracking-wider uppercase"
-            >
-              {effectiveRadius} KM {isMr ? "शोध परीघ" : "DISCOVERY RANGE"}
-            </text>
-          </g>
-        )}
-
-        {/* Direct connection vector to active popup marker */}
-        {farmPos && activePopup && activePopup.id !== "farmer-home" && (
-          <line
-            x1={`${farmPos.x}%`}
-            y1={`${farmPos.y}%`}
-            x2={`${project(activePopup.lat, activePopup.lng).x}%`}
-            y2={`${project(activePopup.lat, activePopup.lng).y}%`}
-            stroke="#10b981"
-            strokeWidth="2.5"
-            strokeDasharray="5,4"
-            className="animate-pulse"
-          />
-        )}
-      </svg>
-
-      {/* Top Floating Header & Stats Banner */}
-      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
-        <div className="flex items-center gap-2 pointer-events-auto bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-md">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
-          <div>
-            <div className="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
-              <span>{customTitle || (isMr ? "थेट कृषी नकाशा आणि बाजार नेटवर्क" : "National Live Agriculture Network")}</span>
-            </div>
-            <div className="text-[10px] text-slate-400 font-mono">
-              Center: {viewCenter.lat.toFixed(3)}°N, {viewCenter.lng.toFixed(3)}°E • Zoom: {zoomLevel.toFixed(1)}x
-            </div>
-          </div>
-        </div>
-
-        {/* Layer Toggle Button */}
-        <div className="relative pointer-events-auto">
-          <Button
-            size="sm"
+      {/* Top Header Bar: Title, Satellite Switcher, Custom Range & Tools */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between gap-2 pointer-events-none flex-wrap">
+        {/* Title & Coordinates Badge */}
+        <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-xl text-white shadow-lg pointer-events-auto flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-bold tracking-tight">
+            {customTitle || (isMr ? "थेट उपग्रह कृषी नकाशा" : "Live Satellite Agri Grid")}
+          </span>
+          <Badge
             variant="outline"
-            onClick={() => setShowLayerMenu(!showLayerMenu)}
-            className="h-8 text-xs bg-slate-900/85 backdrop-blur-md border-slate-700 text-slate-200 hover:text-white hover:bg-slate-800"
+            className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px] px-1.5 py-0"
           >
-            <Layers className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-            <span className="hidden sm:inline">{isMr ? "स्तर" : "Layers"}</span>
-          </Button>
-
-          {/* Layer Menu Dropdown */}
-          {showLayerMenu && (
-            <div className="absolute right-0 top-10 w-52 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-xl p-3 shadow-2xl z-20 space-y-2 text-xs text-slate-200">
-              <div className="font-bold text-white border-b border-slate-700 pb-1.5 flex items-center justify-between">
-                <span>{isMr ? "नकाशा स्तर निवडा" : "Map Layer Filters"}</span>
-                <button
-                  onClick={() => setShowLayerMenu(false)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  {isMr ? "माझे शेत स्थान" : "Farmer Location"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.farmer}
-                  onChange={(e) => setLayers({ ...layers, farmer: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-400" />
-                  {isMr ? "कृषी बाजार समित्या (APMC)" : "APMC Mandis"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.mandis}
-                  onChange={(e) => setLayers({ ...layers, mandis: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  {isMr ? "एफपीओ संकलन हब" : "FPO Hubs & Centers"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.fpos}
-                  onChange={(e) => setLayers({ ...layers, fpos: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-purple-400" />
-                  {isMr ? "सामायिक वाहतूक पूल" : "Active Freight Pools"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.pools}
-                  onChange={(e) => setLayers({ ...layers, pools: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-400" />
-                  {isMr ? "खरेदीदार यार्ड" : "Institutional Buyers"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.buyers}
-                  onChange={(e) => setLayers({ ...layers, buyers: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer hover:bg-slate-800/60 p-1 rounded border-t border-slate-700/60 pt-1.5">
-                <span className="flex items-center gap-1.5 text-emerald-300">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {isMr ? "शोध परीघ वर्तुळ" : "Radius Overlay"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layers.radius}
-                  onChange={(e) => setLayers({ ...layers, radius: e.target.checked })}
-                  className="accent-emerald-600"
-                />
-              </label>
-            </div>
-          )}
+            {mapStyle.toUpperCase()}
+          </Badge>
         </div>
-      </div>
 
-      {/* Floating Tactical Zoom & Navigation Controls */}
-      <div className="absolute right-3 bottom-5 flex flex-col gap-1.5 z-10">
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleZoomIn}
-          title="Zoom In (+)"
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-white hover:bg-emerald-600 hover:border-emerald-500 shadow-lg"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleZoomOut}
-          title="Zoom Out (-)"
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-white hover:bg-emerald-600 hover:border-emerald-500 shadow-lg"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleFitAll}
-          title="Fit All Results"
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-emerald-400 hover:bg-slate-800 shadow-lg"
-        >
-          <Crosshair className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleLocateMe}
-          title="Locate Device GPS"
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-blue-400 hover:bg-slate-800 shadow-lg"
-        >
-          <Navigation className="w-4 h-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleResetView}
-          title="Reset Center"
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-slate-300 hover:bg-slate-800 shadow-lg"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-          className="w-8 h-8 rounded-lg bg-slate-900/90 backdrop-blur-md border-slate-700 text-slate-300 hover:bg-slate-800 shadow-lg"
-        >
-          {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-        </Button>
-      </div>
-
-      {/* Markers Layer */}
-      <div className="absolute inset-0 pointer-events-none">
-        {allMarkers.map((marker) => {
-          const pos = project(marker.lat, marker.lng);
-          if (!pos.visible) return null;
-
-          const isSelected = activePopup?.id === marker.id;
-
-          // Distinct styling per marker type
-          let pinBg = "bg-blue-600 border-blue-400 text-white";
-          let Icon = Store;
-
-          if (marker.type === "farmer") {
-            pinBg = "bg-emerald-600 border-emerald-300 text-white animate-bounce";
-            Icon = MapPin;
-          } else if (marker.type === "fpo") {
-            pinBg = "bg-amber-600 border-amber-300 text-white";
-            Icon = Users;
-          } else if (marker.type === "pool") {
-            pinBg = "bg-purple-600 border-purple-300 text-white";
-            Icon = Truck;
-          } else if (marker.type === "buyer") {
-            pinBg = "bg-rose-600 border-rose-300 text-white";
-            Icon = ShoppingCart;
-          } else if (marker.type === "pin") {
-            pinBg = "bg-indigo-600 border-indigo-300 text-white animate-pulse";
-            Icon = Crosshair;
-          }
-
-          return (
-            <div
-              key={marker.id}
-              style={{
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
-                transform: "translate(-50%, -100%)",
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActivePopup(marker);
-                if (onSelectMarker) onSelectMarker(marker);
-              }}
-              className={`absolute pointer-events-auto cursor-pointer group transition-all duration-200 z-10 hover:z-30 ${
-                isSelected ? "scale-125 z-40" : ""
+        {/* Top Controls: Satellite / Street Switcher + Range Drawer Button */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          {/* Map Style Selector (Satellite, Streets, Terrain) */}
+          <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-0.5 flex items-center shadow-lg text-xs">
+            <button
+              onClick={() => setMapStyle("satellite")}
+              className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                mapStyle === "satellite"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-300 hover:text-white"
               }`}
             >
-              {/* Marker Tooltip on Hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/90 text-white text-[10px] font-medium px-2 py-0.5 rounded shadow-lg border border-slate-700 pointer-events-none">
-                {marker.name} {marker.price ? `(₹${marker.price})` : ""}
-              </div>
-
-              {/* Pin Icon Bubble */}
-              <div
-                className={`flex items-center gap-1 px-1.5 py-1 rounded-full border-2 shadow-lg transition-transform group-hover:scale-110 ${pinBg} ${
-                  isSelected ? "ring-4 ring-emerald-400 ring-offset-2 ring-offset-slate-950" : ""
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                {marker.badge && (
-                  <span className="text-[9px] font-bold tracking-tight pr-0.5 max-w-[80px] truncate">
-                    {marker.badge}
-                  </span>
-                )}
-              </div>
-
-              {/* Pin Tip Arrow */}
-              <div className="w-1.5 h-1.5 bg-slate-900 rotate-45 mx-auto -mt-1 border-r border-b border-slate-700" />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Selected Marker Rich Popup Card */}
-      {activePopup && (
-        <div className="absolute left-4 bottom-5 max-w-xs sm:max-w-sm w-full bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl z-30 animate-in fade-in slide-in-from-bottom-3 duration-200 text-slate-100">
-          <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-slate-800">
-            <div className="overflow-hidden">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] py-0 px-2 uppercase font-bold tracking-wider ${
-                    activePopup.type === "farmer"
-                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                      : activePopup.type === "mandi"
-                      ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
-                      : activePopup.type === "fpo"
-                      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                      : activePopup.type === "pool"
-                      ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
-                      : "bg-rose-500/20 text-rose-300 border-rose-500/40"
-                  }`}
-                >
-                  {activePopup.type.toUpperCase()}
-                </Badge>
-                {activePopup.price && (
-                  <span className="text-xs font-bold text-emerald-400 flex items-center">
-                    <IndianRupee className="w-3 h-3" />
-                    {activePopup.price}/qtl
-                  </span>
-                )}
-              </div>
-              <h4 className="font-bold text-sm text-white mt-1 truncate">{activePopup.name}</h4>
-              <p className="text-xs text-slate-400 truncate">{activePopup.subtext}</p>
-            </div>
+              <Globe className="w-3.5 h-3.5" />
+              <span>{isMr ? "उपग्रह" : "Satellite"}</span>
+            </button>
             <button
-              onClick={() => setActivePopup(null)}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 shrink-0"
+              onClick={() => setMapStyle("streets")}
+              className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                mapStyle === "streets"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-300 hover:text-white"
+              }`}
             >
-              <X className="w-4 h-4" />
+              <MapIcon className="w-3.5 h-3.5" />
+              <span>{isMr ? "रस्ते" : "Streets"}</span>
+            </button>
+            <button
+              onClick={() => setMapStyle("terrain")}
+              className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
+                mapStyle === "terrain"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-300 hover:text-white"
+              }`}
+            >
+              <Mountain className="w-3.5 h-3.5" />
+              <span>{isMr ? "भूप्रदेश" : "Terrain"}</span>
             </button>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-2 gap-2 text-xs py-1 text-slate-300">
-            {activePopup.distanceKm !== undefined && (
-              <div className="bg-slate-800/60 p-2 rounded-lg border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block">{isMr ? "अंतर" : "Distance"}</span>
-                <span className="font-semibold text-white">
-                  {activePopup.distanceKm.toFixed(1)} km
+          {/* Customize Range Button */}
+          <Button
+            size="sm"
+            onClick={() => setShowRangePanel(!showRangePanel)}
+            className={`text-xs font-bold border shadow-lg ${
+              showRangePanel
+                ? "bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-300 ring-2 ring-amber-400"
+                : "bg-slate-950/85 hover:bg-slate-900 text-emerald-300 border-emerald-500/50"
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5 mr-1" />
+            <span>{localRadius} km</span>
+          </Button>
+
+          {/* Layers Toggle Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowLayersPanel(!showLayersPanel)}
+            className="bg-slate-950/85 hover:bg-slate-900 text-slate-200 border-slate-700/80 text-xs px-2.5"
+          >
+            <Layers className="w-3.5 h-3.5" />
+          </Button>
+
+          {/* Fullscreen Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="bg-slate-950/85 hover:bg-slate-900 text-slate-200 border-slate-700/80 text-xs px-2.5"
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Floating Expandable Range Customizer Panel */}
+      {showRangePanel && (
+        <div className="absolute top-14 left-2.5 right-2.5 sm:left-auto sm:right-2.5 sm:w-96 z-20 bg-slate-950/95 backdrop-blur-xl border border-emerald-500/40 rounded-2xl p-4 text-white shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-emerald-400" />
+              <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-300">
+                {isMr ? "शोध त्रिज्या सानुकूल करा" : "Customize Search Radius"}
+              </h4>
+            </div>
+            <button
+              onClick={() => setShowRangePanel(false)}
+              className="w-6 h-6 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Quick Preset Pills */}
+          <div>
+            <div className="text-[11px] text-slate-400 font-semibold mb-1.5">
+              {isMr ? "द्रुत निवडी (Quick Presets):" : "Quick Presets:"}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {RADIUS_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => handleRadiusChange(preset)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    localRadius === preset
+                      ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700"
+                  }`}
+                >
+                  {preset >= 1000 ? (isMr ? "सर्व भारत" : "Pan-India") : `${preset} km`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Range Slider */}
+          <div className="space-y-1 pt-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium">{isMr ? "त्रिज्या स्लायडर:" : "Radius Slider:"}</span>
+              <span className="font-extrabold text-emerald-400 text-sm font-mono">{localRadius} km</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="1000"
+              step="5"
+              value={localRadius}
+              onChange={(e) => handleRadiusChange(Number(e.target.value))}
+              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>10 km</span>
+              <span>250 km</span>
+              <span>500 km</span>
+              <span>1000 km</span>
+            </div>
+          </div>
+
+          {/* Manual Input & Stats */}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">{isMr ? "अचूक किमी:" : "Exact km:"}</span>
+              <Input
+                type="number"
+                min="10"
+                max="1500"
+                value={localRadius}
+                onChange={(e) => handleRadiusChange(Math.max(10, Math.min(1500, Number(e.target.value) || 10)))}
+                className="w-20 h-7 text-xs bg-slate-900 border-slate-700 text-white font-mono px-2"
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleFitRadius}
+              className="text-[10px] h-7 bg-emerald-950/60 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900 px-2"
+            >
+              {isMr ? "नकाशा जुळवा" : "Fit Range View"}
+            </Button>
+          </div>
+
+          {/* Live Markets Found In Range */}
+          <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-2 flex items-center justify-between text-xs">
+            <span className="text-emerald-200 font-medium flex items-center gap-1.5">
+              <span>🌾</span>
+              <span>{isMr ? "कक्षेतील मंडया:" : "Markets in Range:"}</span>
+            </span>
+            <Badge className="bg-emerald-600 text-white font-bold font-mono">
+              {mandisInRange.length} APMCs
+            </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Layers Panel */}
+      {showLayersPanel && (
+        <div className="absolute top-14 right-2.5 w-64 z-20 bg-slate-950/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-3 text-white shadow-2xl space-y-2 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-300">
+              {isMr ? "नकाशा स्तर (Layers)" : "Map Layers"}
+            </span>
+            <button
+              onClick={() => setShowLayersPanel(false)}
+              className="w-5 h-5 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <label className="flex items-center justify-between cursor-pointer py-0.5">
+              <span className="flex items-center gap-1.5">📍 {isMr ? "शेत स्थान" : "Farm Pin"}</span>
+              <input
+                type="checkbox"
+                checked={layers.farmer}
+                onChange={(e) => setLayers({ ...layers, farmer: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer py-0.5">
+              <span className="flex items-center gap-1.5">🏢 {isMr ? "एपीएमसी मंडया" : "APMC Mandis"}</span>
+              <input
+                type="checkbox"
+                checked={layers.mandis}
+                onChange={(e) => setLayers({ ...layers, mandis: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer py-0.5">
+              <span className="flex items-center gap-1.5">🏭 {isMr ? "एफपीओ केंद्रे" : "FPO Hubs"}</span>
+              <input
+                type="checkbox"
+                checked={layers.fpos}
+                onChange={(e) => setLayers({ ...layers, fpos: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer py-0.5">
+              <span className="flex items-center gap-1.5">🚚 {isMr ? "वाहतूक पूल" : "Freight Pools"}</span>
+              <input
+                type="checkbox"
+                checked={layers.pools}
+                onChange={(e) => setLayers({ ...layers, pools: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer py-0.5">
+              <span className="flex items-center gap-1.5">🛒 {isMr ? "खरेदीदार" : "Buyers"}</span>
+              <input
+                type="checkbox"
+                checked={layers.buyers}
+                onChange={(e) => setLayers({ ...layers, buyers: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer py-0.5 border-t border-slate-800 pt-1 text-emerald-300">
+              <span className="flex items-center gap-1.5">⭕ {isMr ? "शोध त्रिज्या रिंग" : "Radius Overlay"}</span>
+              <input
+                type="checkbox"
+                checked={layers.radius}
+                onChange={(e) => setLayers({ ...layers, radius: e.target.checked })}
+                className="rounded accent-emerald-500"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bottom-Right Map Controls: Zoom, Locate, Fit All */}
+      <div className="absolute bottom-4 right-3 z-10 flex flex-col gap-1.5">
+        <button
+          onClick={handleZoomIn}
+          title="Zoom In"
+          className="w-8 h-8 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-white flex items-center justify-center hover:bg-slate-900 shadow-lg transition-transform active:scale-95"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleZoomOut}
+          title="Zoom Out"
+          className="w-8 h-8 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-white flex items-center justify-center hover:bg-slate-900 shadow-lg transition-transform active:scale-95"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleLocateMe}
+          title="Center on Farm"
+          className="w-8 h-8 rounded-xl bg-slate-950/85 backdrop-blur-md border border-emerald-500/60 text-emerald-400 flex items-center justify-center hover:bg-slate-900 shadow-lg transition-transform active:scale-95"
+        >
+          <Navigation className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleFitAll}
+          title="Fit All Markets"
+          className="w-8 h-8 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-white flex items-center justify-center hover:bg-slate-900 shadow-lg transition-transform active:scale-95"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Selected Marker Detail Card (Bottom Left Overlay) */}
+      {activePopupMarker && (
+        <div className="absolute bottom-4 left-3 right-14 sm:right-auto sm:w-80 z-10 bg-slate-950/90 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-3 text-white shadow-2xl animate-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">
+                  {activePopupMarker.type === "farmer" ? "📍" : activePopupMarker.type === "mandi" ? "🏢" : activePopupMarker.type === "fpo" ? "🏭" : activePopupMarker.type === "pool" ? "🚚" : "🛒"}
                 </span>
+                <h5 className="font-bold text-xs text-white truncate max-w-[180px]">{activePopupMarker.name}</h5>
+              </div>
+              {activePopupMarker.subtext && (
+                <div className="text-[10px] text-slate-400 truncate">{activePopupMarker.subtext}</div>
+              )}
+            </div>
+            <button
+              onClick={() => setActivePopupMarker(null)}
+              className="w-5 h-5 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-800/80 text-[11px]">
+            {activePopupMarker.price && (
+              <div className="bg-emerald-950/50 p-1.5 rounded-lg border border-emerald-600/30">
+                <span className="text-[9px] text-emerald-400 block font-semibold">Modal Price</span>
+                <span className="font-extrabold text-emerald-300">₹{activePopupMarker.price}/qtl</span>
               </div>
             )}
-            {activePopup.travelTimeHours !== undefined && (
-              <div className="bg-slate-800/60 p-2 rounded-lg border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block">{isMr ? "प्रवास वेळ" : "Travel Time"}</span>
-                <span className="font-semibold text-white">
-                  {formatTravelTime(activePopup.travelTimeHours)}
-                </span>
+            {activePopupMarker.distanceKm !== undefined && (
+              <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+                <span className="text-[9px] text-slate-400 block font-semibold">Distance</span>
+                <span className="font-bold text-slate-200">{activePopupMarker.distanceKm} km</span>
               </div>
             )}
           </div>
 
-          {/* Extra Detail Rows */}
-          {activePopup.details && (
-            <div className="mt-2 space-y-1 text-[11px] text-slate-300 border-t border-slate-800/80 pt-2">
-              {Object.entries(activePopup.details).map(([k, v]) => (
-                <div key={k} className="flex justify-between">
-                  <span className="text-slate-400">{k}:</span>
-                  <span className="font-medium text-slate-200">{v}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Phone action */}
-          {activePopup.phone && (
-            <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <Phone className="w-3 h-3 text-emerald-400" /> {activePopup.phone}
-              </span>
-              <a
-                href={`tel:${activePopup.phone}`}
-                className="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 rounded border border-emerald-500/40 text-[11px] font-semibold"
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${activePopupMarker.lat},${activePopupMarker.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-slate-300 hover:text-white underline flex items-center gap-1"
+            >
+              Google Maps ↗
+            </a>
+            {activePopupMarker.type === "mandi" && onSelectMarker && (
+              <Button
+                size="sm"
+                onClick={() => onSelectMarker(activePopupMarker)}
+                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-0"
               >
-                {isMr ? "कॉल करा" : "Call"}
-              </a>
-            </div>
-          )}
+                {isMr ? "दर गणना निवडा" : "Select for Payout"}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Click-to-pick indicator banner */}
-      {allowClickToPickLocation && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-indigo-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-indigo-400/50 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl pointer-events-none">
-          <Crosshair className="w-3.5 h-3.5 text-indigo-300 animate-spin" />
-          <span>{isMr ? "नकाशावर कुठेही क्लिक करून स्थान निवडा" : "Click anywhere on map to set coordinates"}</span>
+      {/* Loading Overlay */}
+      {!isMapLoaded && (
+        <div className="absolute inset-0 z-30 bg-slate-950 flex flex-col items-center justify-center text-white space-y-2">
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <span className="text-xs font-semibold text-slate-400">
+            {isMr ? "उपग्रह नकाशा लोड होत आहे..." : "Loading High-Resolution Satellite Map..."}
+          </span>
         </div>
       )}
     </div>
