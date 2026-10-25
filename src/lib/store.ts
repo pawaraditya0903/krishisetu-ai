@@ -8,13 +8,21 @@ import {
   Settlement,
   AuditEvent,
   LogisticsRoutePlan,
+  FarmLocation,
+  AssistantMessage,
 } from "./types";
 import { Language } from "./i18n";
 import { queueOfflineAction } from "./offline-queue";
-import { WIDE_MAHARASHTRA_MANDI_DATA, WIDE_FPO_POOLS } from "./agricultural-data";
+import {
+  WIDE_MAHARASHTRA_MANDI_DATA,
+  WIDE_FPO_POOLS,
+  calculateDynamicMandisForLocation,
+} from "./agricultural-data";
 
 interface AppState {
   currentUser: User | null;
+  farmLocation: FarmLocation | null;
+  searchRadiusKm: number;
   isOffline: boolean;
   language: Language;
   lots: CropLot[];
@@ -23,12 +31,20 @@ interface AppState {
   settlements: Settlement[];
   auditEvents: AuditEvent[];
   routePlans: LogisticsRoutePlan[];
+  chatMessages: AssistantMessage[];
 
   // Actions
   login: (user: User, token?: string) => void;
   logout: () => void;
   setOffline: (status: boolean) => void;
   setLanguage: (lang: Language) => void;
+  setFarmLocation: (loc: FarmLocation) => void;
+  setSearchRadiusKm: (radius: number) => void;
+
+  addChatMessage: (msg: AssistantMessage) => void;
+  updateActionCardStatus: (cardId: string, status: "confirmed" | "cancelled") => void;
+  clearChat: () => void;
+  deleteConversation: () => void;
 
   addLot: (lot: CropLot) => void;
   updateLotStatus: (
@@ -194,6 +210,8 @@ const initialPools: Pool[] = WIDE_FPO_POOLS.map((p) => ({
 const initialMandiPrices: MandiPrice[] = WIDE_MAHARASHTRA_MANDI_DATA.map((r) => ({
   id: r.id,
   mandi: r.mandi,
+  district: r.district,
+  state: r.state || "Maharashtra",
   crop: r.crop,
   variety: r.variety,
   minPrice: r.min_price,
@@ -201,8 +219,11 @@ const initialMandiPrices: MandiPrice[] = WIDE_MAHARASHTRA_MANDI_DATA.map((r) => 
   maxPrice: r.max_price,
   arrivalsQtl: r.arrivals_qtl,
   distanceKm: r.distance_km,
-  updatedAt: "2026-09-08T06:00:00Z",
+  lat: r.lat,
+  lng: r.lng,
+  updatedAt: r.reported_date,
   freshness: "Fresh (Today)",
+  dataStatus: "Demo",
   source: r.source,
 }));
 
@@ -341,6 +362,8 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       currentUser: null,
+      farmLocation: null,
+      searchRadiusKm: 50,
       isOffline: false,
       language: "en",
       lots: initialLots,
@@ -349,6 +372,7 @@ export const useAppStore = create<AppState>()(
       settlements: initialSettlements,
       auditEvents: initialAuditEvents,
       routePlans: initialRoutePlans,
+      chatMessages: [],
 
       login: (user, token) => {
         const userWithToken = { ...user, accessToken: token || user.accessToken };
@@ -369,6 +393,57 @@ export const useAppStore = create<AppState>()(
       },
       setOffline: (status) => set({ isOffline: status }),
       setLanguage: (language) => set({ language }),
+
+      setFarmLocation: (loc: FarmLocation) => {
+        set({ farmLocation: loc });
+        // Recalculate mandi prices dynamically from this farm location!
+        const dynamic = calculateDynamicMandisForLocation(
+          loc.lat,
+          loc.lng,
+          "All",
+          undefined,
+          get().searchRadiusKm
+        );
+        set({ mandiPrices: dynamic.mandis });
+        get().addAuditEvent(
+          "SET_LOCATION",
+          "FARM_LOCATION",
+          loc.id,
+          `Set farm location to ${loc.label} (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`
+        );
+      },
+
+      setSearchRadiusKm: (radius: number) => {
+        set({ searchRadiusKm: radius });
+        const loc = get().farmLocation;
+        if (loc) {
+          const dynamic = calculateDynamicMandisForLocation(
+            loc.lat,
+            loc.lng,
+            "All",
+            undefined,
+            radius
+          );
+          set({ mandiPrices: dynamic.mandis });
+        }
+      },
+
+      addChatMessage: (msg: AssistantMessage) => {
+        set((state) => ({ chatMessages: [...state.chatMessages, msg] }));
+      },
+
+      updateActionCardStatus: (cardId: string, status: "confirmed" | "cancelled") => {
+        set((state) => ({
+          chatMessages: state.chatMessages.map((m) =>
+            m.actionCard && m.actionCard.id === cardId
+              ? { ...m, actionCard: { ...m.actionCard, status } }
+              : m
+          ),
+        }));
+      },
+
+      clearChat: () => set({ chatMessages: [] }),
+      deleteConversation: () => set({ chatMessages: [] }),
 
       addLot: (lot) => {
         const { isOffline, addAuditEvent } = get();
@@ -589,12 +664,18 @@ export const useAppStore = create<AppState>()(
 
       fetchRealTimeMandiPrices: async (crop?: string, mandi?: string) => {
         try {
+          const { farmLocation, searchRadiusKm } = get();
           const apiBaseUrl =
             process.env.NEXT_PUBLIC_API_URL ||
             (typeof window !== "undefined" ? "/api/v1" : "http://127.0.0.1:8000/api/v1");
           const query = new URLSearchParams();
           if (crop && crop !== "All") query.append("crop", crop);
           if (mandi) query.append("mandi", mandi);
+          if (farmLocation) {
+            query.append("lat", farmLocation.lat.toString());
+            query.append("lng", farmLocation.lng.toString());
+            query.append("radius_km", searchRadiusKm.toString());
+          }
 
           const url = `${apiBaseUrl}/market/prices${
             query.toString() ? `?${query.toString()}` : ""
@@ -602,10 +683,13 @@ export const useAppStore = create<AppState>()(
           const res = await fetch(url);
           if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const mapped: MandiPrice[] = data.map((item: {
+            const list = Array.isArray(data) ? data : data.mandis || [];
+            if (list.length > 0) {
+              const mapped: MandiPrice[] = list.map((item: {
                 id: string;
                 mandi: string;
+                district?: string;
+                state?: string;
                 crop: string;
                 variety: string;
                 min_price: number;
@@ -613,11 +697,18 @@ export const useAppStore = create<AppState>()(
                 max_price: number;
                 arrivals_qtl: number;
                 distance_km: number;
-                freshness?: string;
+                travel_time_hours?: number;
+                lat?: number;
+                lng?: number;
+                freshness_status?: string;
+                data_status?: string;
                 source: string;
+                reported_date?: string;
               }) => ({
                 id: item.id,
                 mandi: item.mandi,
+                district: item.district,
+                state: item.state,
                 crop: item.crop,
                 variety: item.variety,
                 minPrice: item.min_price,
@@ -625,13 +716,17 @@ export const useAppStore = create<AppState>()(
                 maxPrice: item.max_price,
                 arrivalsQtl: item.arrivals_qtl,
                 distanceKm: item.distance_km,
-                updatedAt: new Date().toISOString(),
+                travelTimeHours: item.travel_time_hours,
+                lat: item.lat,
+                lng: item.lng,
+                updatedAt: item.reported_date || new Date().toISOString(),
                 freshness:
-                  item.freshness && item.freshness.includes("Yesterday")
+                  item.freshness_status && item.freshness_status.includes("Yesterday")
                     ? "Recent (Yesterday)"
-                    : item.freshness && item.freshness.includes("Stale")
+                    : item.freshness_status && item.freshness_status.includes("Stale")
                     ? "Stale (Verify before dispatch)"
                     : "Fresh (Today)",
+                dataStatus: (item.data_status as MandiPrice["dataStatus"]) || "Demo",
                 source: item.source,
               }));
               set({ mandiPrices: mapped });
@@ -639,7 +734,18 @@ export const useAppStore = create<AppState>()(
             }
           }
         } catch {
-          // Backend offline or error: retain current / local state
+          // Backend offline or error: calculate locally if location is available
+          const { farmLocation, searchRadiusKm } = get();
+          if (farmLocation) {
+            const localDynamic = calculateDynamicMandisForLocation(
+              farmLocation.lat,
+              farmLocation.lng,
+              crop || "All",
+              undefined,
+              searchRadiusKm
+            );
+            set({ mandiPrices: localDynamic.mandis });
+          }
         }
       },
 
