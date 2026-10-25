@@ -173,7 +173,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
               ))}
             </div>
 
-            {/* Voice Assistant Demo */}
+            {/* Voice Assistant (Gemini & Indic NLU) */}
             <Button
               variant="outline"
               size="sm"
@@ -198,7 +198,8 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
               <span className="hidden sm:inline">{isOffline ? t.offline : t.online}</span>
             </Button>
 
-            <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide uppercase border border-amber-200 hidden sm:inline">
+            <span className="bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-tight border border-emerald-200 hidden sm:inline-flex items-center gap-1.5 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {t.demoBadge}
             </span>
           </div>

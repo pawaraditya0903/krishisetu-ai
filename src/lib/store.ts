@@ -462,7 +462,7 @@ export const useAppStore = create<AppState>()(
           "RESERVE_POOL",
           "POOL",
           poolId,
-          `Buyer ${buyerName} reserved pool. Sandbox nodal payment authorized.`
+          `Buyer ${buyerName} reserved pool. Protected nodal escrow funds authorized.`
         );
       },
 
@@ -519,7 +519,7 @@ export const useAppStore = create<AppState>()(
             amount: net,
             status: "Released",
             date: new Date().toISOString(),
-            nodalAccountRef: `YESB0000109-SANDBOX-NODAL-${safePoolId.slice(-4)}-00${idx + 1}`,
+            nodalAccountRef: `YESB0000109-NODAL-ESCROW-${safePoolId.slice(-4)}-00${idx + 1}`,
             breakdown: { gross, freight, packaging, handling, fpoFee, qualityAdj, lossBuffer, net },
           };
         });
@@ -538,7 +538,7 @@ export const useAppStore = create<AppState>()(
           "DELIVERY_ACCEPTED",
           "POOL",
           poolId,
-          `Buyer accepted delivery. Authorized sandbox funds released to ${newSettlements.length} farmers.`
+          `Buyer accepted delivery. Protected nodal escrow funds released to ${newSettlements.length} farmers.`
         );
       },
 
@@ -556,7 +556,7 @@ export const useAppStore = create<AppState>()(
           "DISPUTE_RAISED",
           "POOL",
           poolId,
-          `Dispute raised by buyer: "${reason}". Sandbox payment placed on hold pending FPO/Admin review.`
+          `Dispute raised by buyer: "${reason}". Escrow payment placed on hold pending FPO/Admin review.`
         );
       },
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, MicOff, Volume2, Sparkles, MessageSquare, Globe, AlertCircle, Send, Key, Bot, Loader2, Check } from "lucide-react";
+import { Mic, MicOff, Volume2, Sparkles, MessageSquare, Globe, AlertCircle, Send, Bot, Loader2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { translations } from "@/lib/i18n";
 import { apiClient } from "@/lib/api-client";
@@ -142,9 +142,6 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
   const [activeQA, setActiveQA] = useState<QAItem | null>(LOCALIZED_SAMPLE_QUERIES[language]?.[0] || LOCALIZED_SAMPLE_QUERIES.en[0]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [customApiKey, setCustomApiKey] = useState("");
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [keyInputVal, setKeyInputVal] = useState("");
   const [aiSource, setAiSource] = useState<"gemini" | "fallback">("gemini");
 
   const transcriptAccumulatorRef = useRef("");
@@ -157,15 +154,6 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
     () => typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition),
     () => true
   );
-
-  // Load persisted Gemini API key
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("krishisetu_gemini_key") || "";
-      setCustomApiKey(savedKey);
-      setKeyInputVal(savedKey);
-    }
-  }, []);
 
   // Update default QA when language changes
   useEffect(() => {
@@ -706,17 +694,6 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
     }
   }, [mandiPrices, pools, lots, settlements]);
 
-  const handleSaveKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = keyInputVal.trim();
-    setCustomApiKey(trimmed);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("krishisetu_gemini_key", trimmed);
-    }
-    setShowKeyInput(false);
-    toast.success(trimmed ? "Gemini API Key Saved" : "Default Cloud AI Restored");
-  };
-
   const handleProcessQuery = useCallback(
     async (queryText: string) => {
       if (!queryText.trim()) return;
@@ -726,8 +703,7 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
         const res = await apiClient.ai.chat(
           queryText,
           selectedLang,
-          [],
-          customApiKey || undefined
+          []
         );
 
         if (res.data && res.data.reply) {
@@ -753,7 +729,7 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
       speakText(qaResult.response, selectedLang);
       setIsAiLoading(false);
     },
-    [customApiKey, parseAgriculturalIntent, selectedLang, speakText]
+    [parseAgriculturalIntent, selectedLang, speakText]
   );
 
   const handleTextSubmit = (e: React.FormEvent) => {
@@ -934,49 +910,12 @@ export default function VoiceAssistantModal({ open, onOpenChange }: VoiceAssista
                 </DialogDescription>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              className={`p-1.5 rounded-lg border text-xs transition-all flex items-center gap-1 ${
-                customApiKey
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-700 font-medium"
-                  : "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800"
-              }`}
-              title="Configure Google Gemini API Key"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span className="text-[10px] hidden sm:inline">
-                {customApiKey ? "API Key Set" : "Gemini Key"}
-              </span>
-            </button>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Google Assistant AI</span>
+            </div>
           </div>
         </DialogHeader>
-
-        {showKeyInput && (
-          <form onSubmit={handleSaveKey} className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-blue-600" /> Google Gemini API Key
-              </span>
-              <span className="text-[10px] text-slate-400">Stored in browser localStorage</span>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                placeholder="AIzaSy..."
-                value={keyInputVal}
-                onChange={(e) => setKeyInputVal(e.target.value)}
-                className="text-xs h-8 font-mono bg-white"
-              />
-              <Button type="submit" size="sm" className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white">
-                <Check className="w-3.5 h-3.5 mr-1" /> Save
-              </Button>
-            </div>
-            <p className="text-[10px] text-slate-500">
-              Leave blank to use KrishiSetu Cloud Serverless Assistant. Enter your Google AI Studio key to use personal quota.
-            </p>
-          </form>
-        )}
 
         <div className="space-y-4 py-1">
           {/* Language Selector Tabs */}

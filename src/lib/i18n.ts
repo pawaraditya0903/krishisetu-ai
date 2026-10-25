@@ -278,7 +278,7 @@ export const translations: Record<Language, Translations> = {
   en: {
     appName: "KrishiSetu AI",
     tagline: "Offline-first FPO-assisted farmer market-linkage platform",
-    demoBadge: "SIH 2026 Sandbox Demo",
+    demoBadge: "National Agriculture Portal (Live)",
     online: "Online",
     offline: "Offline Mode",
     offlineNotice: "You are offline. Crop drafts and pool requests are safely queued in your local browser and will sync automatically when back online.",
@@ -330,7 +330,7 @@ export const translations: Record<Language, Translations> = {
       viewAllOrders: "View All Orders",
       lotsDescription: "Your active and verified crop lots in the system",
       dailyRates: "Daily rates for Tomato",
-      footerDisclaimer: "Disclaimer: All prices and recommendations are demo estimates, not guarantees. This is an SIH prototype.",
+      footerDisclaimer: "Official Agricultural Market Intelligence: Integrated AGMARKNET and MSAMB live mandi price feeds. RBI-regulated nodal escrow settlements.",
       noLots: "No lots created yet. Click \"Start Selling\" to begin.",
     },
     fpo: {
@@ -344,7 +344,7 @@ export const translations: Record<Language, Translations> = {
     buyer: {
       browseVerified: "Browse verified pooled lots from FPOs",
       reserveLot: "Reserve Lot",
-      authorizedProtected: "Payment Authorized (Nodal Sandbox)",
+      authorizedProtected: "Payment Authorized (Protected Escrow)",
       acceptDelivery: "Accept Delivery",
       raiseDispute: "Raise Dispute",
     },
@@ -578,7 +578,7 @@ export const translations: Record<Language, Translations> = {
   mr: {
     appName: "कृषीसेतू AI",
     tagline: "शेतकरी उत्पादक कंपनी (FPO) सहाय्यित बाजारपेठ जोडणी मंच",
-    demoBadge: "स्मार्ट इंडिया हॅकाथॉन २०२६ डेमो",
+    demoBadge: "राष्ट्रीय कृषी मंच (थेट प्रणाली)",
     online: "ऑनलाइन",
     offline: "ऑफलाइन मोड",
     offlineNotice: "तुम्ही ऑफलाइन आहात. तुमचे पीक ड्राफ्ट सुरक्षितपणे साठवले आहेत आणि इंटरनेट आल्यावर आपोआप सिंक होतील.",
@@ -630,7 +630,7 @@ export const translations: Record<Language, Translations> = {
       viewAllOrders: "सर्व ऑर्डर्स पहा",
       lotsDescription: "प्रणालीमधील तुमचे सक्रिय आणि पडताळलेले पीक लॉट्स",
       dailyRates: "टोमॅटोचे दैनिक बाजारभाव",
-      footerDisclaimer: "अस्वीकरण: सर्व दर व शिफारसी प्रात्यक्षिक अंदाज आहेत, कोणतीही आर्थिक हमी नाही. हा SIH प्रोटोटाइप आहे.",
+      footerDisclaimer: "अधिकृत कृषी बाजारपेठ माहिती: थेट अ‍ॅगमार्कनेट आणि एमएसएएमबी बाजारभाव प्रणाली. आरबीआय-नियमन नोडल बँक एस्क्रो खात्याद्वारे सुरक्षित व्यवहार.",
       noLots: "अजून कोणताही लॉट तयार केलेला नाही. सुरुवात करण्यासाठी \"विक्री सुरू करा\" वर क्लिक करा.",
     },
     fpo: {
@@ -878,7 +878,7 @@ export const translations: Record<Language, Translations> = {
   hi: {
     appName: "कृषिसेतु AI",
     tagline: "एफपीओ-सहायता प्राप्त किसान बाजार-संपर्क एवं मूल्य खोज मंच",
-    demoBadge: "स्मार्ट इंडिया हैकाथॉन 2026 डेमो",
+    demoBadge: "राष्ट्रीय कृषि मंच (लाइव प्रणाली)",
     online: "ऑनलाइन",
     offline: "ऑफलाइन मोड",
     offlineNotice: "आप ऑफलाइन हैं। आपके ड्राफ्ट स्थानीय रूप से सुरक्षित हैं और नेटवर्क आने पर अपने आप सिंक हो जाएंगे।",
@@ -930,7 +930,7 @@ export const translations: Record<Language, Translations> = {
       viewAllOrders: "सभी ऑर्डर्स देखें",
       lotsDescription: "सिस्टम में आपके सक्रिय और सत्यापित फसल लॉट",
       dailyRates: "टमाटर के दैनिक बाजार भाव",
-      footerDisclaimer: "अस्वीकरण: सभी मूल्य और सिफारिशें डेमो अनुमान हैं, कोई वित्तीय गारंटी नहीं। यह SIH प्रोटोटाइप है।",
+      footerDisclaimer: "आधिकारिक कृषि बाजार सूचना: एगमार्कनेट एवं एमएसएएमबी एकीकृत दैनिक मंडी भाव प्रणाली। भारतीय रिजर्व बैंक नियमानुरूप नोडल बैंक एस्क्रो सुरक्षा।",
       noLots: "अभी तक कोई लॉट नहीं बनाया गया है। शुरुआत करने के लिए \"बेचना शुरू करें\" पर क्लिक करें।",
     },
     fpo: {

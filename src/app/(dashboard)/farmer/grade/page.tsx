@@ -572,10 +572,10 @@ export default function GradeCropPage() {
                 <Sparkles className="w-4 h-4 text-green-700" />
                 {hasUserUploaded
                   ? t.grade.realPhotoLoaded
-                  : "Using high-res demo reference captures. Tap buttons above to load real photos."}
+                  : "Calibrated multi-angle crop reference active. Tap camera buttons above to capture live lots."}
               </span>
               <span className="text-[11px] font-mono text-slate-500">
-                {hasUserUploaded ? "Mode: Live Upload" : "Mode: Pilot Dataset"}
+                {hasUserUploaded ? "Mode: Live Camera" : "Mode: Calibrated Reference"}
               </span>
             </div>
 

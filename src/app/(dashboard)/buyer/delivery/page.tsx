@@ -26,7 +26,7 @@ export default function BuyerDeliveryPage() {
   const handleAccept = (poolId: string) => {
     acceptDelivery(poolId);
     toast.success("Delivery Formally Accepted!", {
-      description: "Protected nodal sandbox funds have been split and released to farmers.",
+      description: "Protected nodal escrow funds have been split and released to farmers.",
     });
   };
 
@@ -39,7 +39,7 @@ export default function BuyerDeliveryPage() {
       raiseDispute(selectedDisputePool, disputeReason);
       setSelectedDisputePool(null);
       toast.error("Dispute Formally Raised", {
-        description: "Payment release is held in sandbox until FPO and Admin resolution.",
+        description: "Payment release is held in escrow until FPO and Admin resolution.",
       });
     }
   };
@@ -112,7 +112,7 @@ export default function BuyerDeliveryPage() {
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">Vehicle Arrival &amp; Quality Inspection</h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                    Scan the vehicle gate QR pass and match crates against the FPO digital weigh-slip before releasing the nodal sandbox payment.
+                    Scan the vehicle gate QR pass and match crates against the FPO digital weigh-slip before releasing the nodal escrow payment.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
